@@ -1,80 +1,56 @@
-# GUI verification
+# Single-bundle verification — 0.2.0
 
-This is a verification snapshot for DSH `0.2.0-rc.2` and Node 24. The root package is `0.1.3`. The GUI companion is `@local/dsh-independent-auto-review-settings` `0.1.1`.
+Target: DSH `0.2.0-rc.2`, Node `v24.19.0`, root package `0.2.0`. The local profile has been migrated and the user confirmed the new GUI displays and saves correctly.
 
-## Results
+## Current results
 
-| Check | Result | What it establishes |
-| --- | --- | --- |
-| Automated suite | 98 tests passed | Includes all 57 prior safety tests and 41 GUI tests. |
-| Real Host RPC boundary | 16 tests passed | Shipped Cordis Context, TypertRegistry, Gateway, and ToolRuntime dispatch and strict validation; isolated persistence seam. |
-| Live Host settings read | Passed | The installed management tool can read the independent reviewer. |
-| Live Host same-values save | Passed | The shared Host configuration operation accepted the revision-fenced write. |
-| Client bundle-page registration | Active for both own bundle keys | The connected Client registered `plugins.bundle.config` for the reviewer and settings companion. The internal row entry remains available. |
-| Browser appearance | Not verified | No visual result is claimed. |
-| Browser click and save flow | Not verified | Host tool tests do not prove browser interaction. |
-| Model gateway requests for this GUI snapshot | Not run | Host RPC tests are not model requests. Saving settings does not establish model connectivity, identity, or review decisions. |
+`npm run check` passes 120 tests. The earlier crash-characterization case has been replaced by a stronger, relevant assertion: all three route identifiers reject empty or padded values through real ConfigEditor **before any disk write or gate reload**. This is prevention, not SDK rollback.
 
-The live read and save retained these reviewer values:
+The separate cold-migration acceptance test also passes. It uses the actual retained old root/companion archives, verifies their hashes, builds the new tarball, and starts three separate Host composition processes sequentially:
 
-```yaml
-reviewer:
-  provider: gptpro
-  model: codex-auto-review
-  reasoningEffort: medium
-  timeoutMs: 60000
-```
+1. Original two packages with complete synthetic raw configuration.
+2. New single package with that same configuration, including a successful changed-value save.
+3. Restored original two packages with the original full configuration.
 
-The save used the same values. It did not change the main model. It did not select Auto or test the gateway.
+Each process finishes cleanup and exits before the next starts. Built-in review remains suppressed; only one settings tool and one Auto integration are present. The restored reviewer and complete raw configuration equal the baseline. No production server, browser, profile or external model is involved.
 
-## Bundle-card entry correction
+| Check | Evidence |
+| --- | --- |
+| Necessary review safety | Existing policy, decision, cancellation and guard tests pass; gate implementation unchanged. |
+| Minimal Config correction | Three schema fields share the existing nonempty/unpadded identifier rule; no retry or fallback added. |
+| Pre-write rejection | Empty, whitespace-only and padded provider/model/effort values do not change disk, revision, gate config or settings store. |
+| Normal save lifecycle | Real Loader, root Include, disk ConfigEditor and Gateway; gate effects restart, settings sibling/store/tool survive. |
+| Concurrency and raw data | Stale/concurrent saves rejected; unknown root/reviewer fields and inherited effort retained. |
+| Pending review | Synthetic LLM cancelled/drained; tool body not run; confined sandbox and never preserved. |
+| Headless and packed package | Actual extracted root exports/patch mounted with declared peers only; headless gate works without settings services. |
+| Client requests/build | Latest request wins, obsolete failures cannot replace current state; artifact matches ordinary module build. |
+| Cold migration/restoration | Passed using retained old artifacts and separate Host processes. Not arbitrary SDK automatic rollback. |
+| Actual profile and GUI | One root bundle 0.2.0 remains; old companion removed. After the actual Host restart, the settings tool reads successfully, the root Client form is active, and the user explicitly confirmed display and saving. |
 
-The user reported that both installed cards opened pages with no settings in `v0.1.2`. The form had registered only `plugins.row.config`. The actual card click opens the bundle page, whose form is selected from `plugins.bundle.config`. The fix registers the same shared form under both own bundle package names and retains the internal row entry.
+## Historical SDK issue — not claimed fixed
 
-The settings companion was reloaded without reloading the review gate. Both bundle registrations are active in the connected Client. The saved reviewer route is unchanged. A user-confirmed display and read of the form is still required; registration alone is not a visual result.
+The old schema accepted padded model identifiers that activation rejected. On the shipped SDK, that path produced an unhandled Promise rejection before reliable automatic rollback completed. Earlier sources and the reproduction remain in the private checkpoint.
 
-## Configuration behavior
+The runtime correction is deliberately small: the plugin schema now rejects the same invalid values before ConfigEditor persists them. The new test proves there was no write and no reload; it does not infer that SDK rollback works. Other SDK startup failures remain a platform limitation.
 
-The core reviewer is not a volatile settings consumer. The GUI and deferred `auto_review_settings` tool use the same shared ConfigEditor operation. A configuration edit follows the review component's normal reload lifecycle.
+The user approved cold package restoration instead of requiring this plugin to repair arbitrary SDK failures. The former `check:recovery`/`check:release` layers were removed rather than extended with catches or bypass switches. The concrete migration check below requires both normal regression checks and actual old-artifact cold restoration.
 
-- Use `get` before `set`. Supply the returned revision as `expectedRevision`.
-- A stale revision rejects the write. It must not overwrite a newer edit.
-- A blank reasoning field restores the bundle default. It does not force the adapter default while a bundle default exists.
-- A save can move Auto sessions to confined `workspace-write`. Select Auto again after the configuration is active.
-- A main-model selection change does not reload the reviewer.
-- The management tool cannot select Auto or approve a pending tool call.
-
-## Scope and limits
-
-Installation and Host activation do not prove that the user can see or use the form. An active Client slot is not a screenshot or a click test. Light and dark appearance, keyboard interaction, and the complete browser save flow remain unverified.
-
-The 16 RPC tests cover read/save, exact named arguments, strict request schemas, inherited effort, stale and in-transaction revision fences, concurrent saves, shared tool behavior, and owned disposal with no source-mode fallback. Their ConfigEditor persistence boundary is an isolated in-memory seam. They do not test the HTTP/WebSocket carrier or a changed-value live reviewer reload.
-
-The separate live same-values save exercises the installed ConfigEditor operation. It does not establish changed-value lifecycle behavior or browser interaction.
-
-The settings test did not execute a real review request. Real-gateway checks must record their own inputs, decisions, route, and failure behavior. See [earlier gate verification](verification.md) for the previous synthetic adapter and installed-gate checks; those results do not establish the current GUI flow.
-
-The locally configured GPT Pro gateway uses HTTP. Review evidence can contain private project data and has no TLS protection on that connection. Model review is probabilistic. It is not a deterministic security boundary.
-
-## Reproduce the local checks
-
-Use the source checkout and the tested runtime:
+## Commands
 
 ```sh
 npm run link:runtime
 npm ci --ignore-scripts --prefix tools/gui/build-tools
 npm run build:gui
 npm run check
+
+# Directory must hold the retained old artifacts plus artifacts.json; no synthetic old package is generated.
+IAR_ROLLBACK_DIR=/path/to/private/rollback-baseline npm run check:migration
 ```
 
-The compiler is for development only. The GUI package ships its prebuilt browser artifact and needs no install-time build. Do not treat a successful settings save as permission to run a live gateway test.
+These commands are offline checks, not authorization to stop a user's Host. In the completed local migration, the old process initially remained alive after package replacement and extension restarts. After an explicitly authorized termination, the VS Code extension started a new Host process; the settings service and root form then became active. A live read retained `gptpro / codex-auto-review / high / 60000`. The user confirmed both display and saving. No additional backup or automatic recovery was introduced after the user prohibited them.
 
-For installation and rollback, see the [project README](../README.md) and [GUI README](../tools/gui/README.md).
+## Limits and privacy
 
-Project reports use short, direct English. They are not certified for full ASD-STE100 compliance.
+The new single-bundle display/save confirmation is separate from the earlier two-bundle observation. No separate Reload-button, keyboard or light/dark-theme acceptance was recorded. No real model request was made for these tests. The configured GPT Pro gateway uses HTTP without TLS; review evidence may contain private data.
 
-## Official references
-
-- [Bundle packaging and installation, DSH 0.2.0-rc.2](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/docs/user/develop/basic/publish.md)
-- [Plugin Manager activation and verification limits, DSH 0.2.0-rc.2](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/boot/plugin-manager/README.md)
-- [Client plugin requirements, DSH 0.2.0-rc.2](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/preset/agent-preset/skills/cordis-plugin-development/references/ui-plugin.md)
+See [Goal boundaries](migration-goal.md), [migration steps](single-bundle-migration.md), and [historical gate checks](verification.md).

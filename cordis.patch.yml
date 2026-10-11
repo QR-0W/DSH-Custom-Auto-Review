@@ -12,3 +12,5 @@
           model: codex-auto-review
           reasoningEffort: medium
           timeoutMs: 60000
+    - id: independent-auto-review-settings-host
+      name: '@local/dsh-independent-auto-review/settings'

@@ -1,12 +1,15 @@
 import z from '@deepseek-ai/schemastery';
 import { deepFreeze } from '@deepseek-ai/dsh-util-values';
 
+// Match the existing activation rule before ConfigEditor writes or reloads the plugin.
+const identifierPattern = /^\S(?:[\s\S]*\S)?$/;
+
 /** Configure the review route. Do not inherit the main model route. */
 export const Config = z.object({
   reviewer: z.object({
-    provider: z.string().required(),
-    model: z.string().required(),
-    reasoningEffort: z.string(),
+    provider: z.string().pattern(identifierPattern).required(),
+    model: z.string().pattern(identifierPattern).required(),
+    reasoningEffort: z.string().pattern(identifierPattern),
     timeoutMs: z.number().min(1).max(300000).step(1).default(60000),
   }).required(),
 });

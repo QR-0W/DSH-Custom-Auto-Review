@@ -1,5 +1,5 @@
-/** Make only reviewer-field operations. Empty effort inherits the bundle default. */
-export function reviewMutation(draft) {
+/** Normalize only independent reviewer fields; omitted effort restores inheritance. */
+export function normalizeReviewer(draft) {
   const provider = typeof draft?.provider === 'string' ? draft.provider.trim() : '';
   const model = typeof draft?.model === 'string' ? draft.model.trim() : '';
   if (!provider) throw new Error('provider');
@@ -10,36 +10,47 @@ export function reviewMutation(draft) {
   const timeoutMs = Number(raw);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300000) throw new Error('timeout');
   if (draft.reasoningEffort !== undefined && typeof draft.reasoningEffort !== 'string') throw new Error('effort');
-  const effort = draft.reasoningEffort?.trim();
+  const reasoningEffort = draft.reasoningEffort?.trim();
+  return { provider, model, timeoutMs, ...(reasoningEffort ? { reasoningEffort } : {}) };
+}
+
+/** Host-only field operations, preserving all other raw configuration. */
+export function reviewMutation(draft) {
+  const reviewer = normalizeReviewer(draft);
   return [
-    { op: 'set', path: ['reviewer', 'provider'], value: provider },
-    { op: 'set', path: ['reviewer', 'model'], value: model },
-    { op: 'set', path: ['reviewer', 'timeoutMs'], value: timeoutMs },
-    effort ? { op: 'set', path: ['reviewer', 'reasoningEffort'], value: effort } :
+    ...['provider', 'model', 'timeoutMs'].map(field => ({ op: 'set', path: ['reviewer', field], value: reviewer[field] })),
+    reviewer.reasoningEffort ? { op: 'set', path: ['reviewer', 'reasoningEffort'], value: reviewer.reasoningEffort } :
       { op: 'unset', path: ['reviewer', 'reasoningEffort'] },
   ];
 }
 
 export function reviewDraft(state) {
-  const r = state?.value?.reviewer ?? {};
+  const r = state?.reviewer ?? {};
   return { provider: r.provider ?? '', model: r.model ?? '',
     reasoningEffort: r.reasoningEffort ?? '', timeoutMs: String(r.timeoutMs ?? 60000) };
 }
 
-/** Use the read revision, not a later mirror revision, to prevent lost edits. */
-export async function submitReview(form, draft, revision) {
-  if (form?.state?.status !== 'ready' || !form.state.writable || form.state.mode !== 'host') throw new Error('unavailable');
-  if (!Number.isInteger(revision) || revision < 0) throw new Error('revision');
-  const accepted = await form.mutate(reviewMutation(draft), revision);
-  if (accepted !== true) throw new Error('refused');
-  return true;
+/** Send the read revision and a reviewer value directly to the shared Host operation. */
+export async function submitReview(api, draft, expectedRevision) {
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) throw new Error('revision');
+  const saved = await api.save({ reviewer: normalizeReviewer(draft), expectedRevision });
+  if (saved?.saved !== true) throw new Error('refused');
+  return saved;
 }
 
-/** Card clicks open bundle pages; keep the internal row entry as an alternate route. */
+/** Mount RPC first, then start an owned view with the namespace explicitly injected. */
+export function reviewViewPlugin(register) {
+  return {
+    name: 'independent-auto-review-settings-view',
+    inject: ['slots', 'remote', 'remote.independentAutoReviewSettings'],
+    apply: register,
+  };
+}
+
+/** The single installed card and its internal review-row alternate route. */
 export function reviewConfigEntries() {
   return [
     { name: 'plugins.bundle.config', key: '@local/dsh-independent-auto-review' },
-    { name: 'plugins.bundle.config', key: '@local/dsh-independent-auto-review-settings' },
     { name: 'plugins.row.config', key: '@local/dsh-independent-auto-review#independent-auto-review' },
   ];
 }

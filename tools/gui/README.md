@@ -1,55 +1,24 @@
-# Auto Review Settings
+# Integrated Auto Review settings
 
-`@local/dsh-independent-auto-review-settings` adds a configuration form for Independent Auto Review to the DSH Plugins page. It also provides the deferred `auto_review_settings` management tool.
+This directory contains the settings Host component, Client source and generated browser artifact for the root `@local/dsh-independent-auto-review` package. It is no longer a separate installable companion.
 
-This companion targets DSH `0.2.0-rc.2` and Node 24. It does not replace the main model, implement the review gate, select Auto, or approve tool calls.
+Version `0.2.0` is installed in the verified local profile as one package. The Host reads the preserved reviewer settings, and the user confirmed GUI display and saving. Pre-write rejection and isolated cold package restoration also pass. See [current verification](../../docs/gui-verification.md) for limits.
 
-## Install
+## Ownership
 
-Use a source checkout of [QR-0W/dsh-independent-auto-review](https://github.com/QR-0W/dsh-independent-auto-review) at tag `v0.1.3` or a reviewed later commit. This release contains root `0.1.3` and companion `0.1.1`, with forms on both installed bundle-card pages. The older `v0.1.0` and `v0.1.1` tags do not contain this companion.
+The root bundle inserts the gate and settings Host as sibling Loader rows. The settings service uses the shared ConfigEditor operation for both the GUI and `auto_review_settings` tool. It does not own or change the main model, select Auto, or approve calls.
 
-1. Register a DSH adapter for the review provider and model.
-2. Run `npm run link:runtime` from the repository root. It links the exact tested API packages shipped with DSH. It does not install another runtime.
-3. Move existing Auto sessions to a manual permission mode before replacing the built-in reviewer.
-4. Install the repository root's absolute directory through Plugin Manager.
-5. Install this companion's absolute directory through Plugin Manager.
-6. Confirm the management outcomes. Refresh the existing GUI when needed to load the client artifact.
+The Client mounts its strict Remote contribution before creating the child view that explicitly injects `remote.independentAutoReviewSettings`. The root bundle card and the gate row alternate route render the same form. There is no legacy companion-card route or package alias.
 
-The root and companion are separate bundles. Installing one does not activate the other. The companion loads its Host entry from [host.js](host.js) and its prebuilt browser artifact from [client.js](client.js). End users need no compiler or install-time build script.
+## Request behavior
 
-Do not hand-edit the profile's package manifest or patch. Use Plugin Manager for installation, activation, and removal.
+The form sends normalized reviewer values and the revision it read directly to the Host. Unknown raw configuration is preserved by the Host edit. Blank effort restores inherited configuration; timeout is an integer from 1 to 300000 milliseconds.
 
-## Configure
+Only the latest Client request generation may update the page. An old success or old failure, including after effect cleanup/reactivation, cannot overwrite a newer request. Failed saves retain drafts. Diagnostics show allowlisted categories rather than arbitrary potentially private Host messages.
 
-Open **Plugins → Installed**. Select **Independent Auto Review** or **Auto Review Settings** to reach the same reviewer form directly. The review row's Configure control remains an alternate entry.
+Saving reloads the gate and can move Auto sessions to confined permissions. The user must select Auto again if appropriate. Saving does not test gateway connectivity or backend model identity.
 
-Enter the exact provider and model identifiers, reasoning effort, and timeout. Only an explicit save writes settings. The form retains the draft after a failure and rejects a stale revision instead of overwriting a concurrent edit.
-
-- A blank reasoning field restores the bundle default. With the current bundle, that default is `medium`.
-- If no configuration layer supplies a reasoning effort, the adapter uses its own default.
-- Timeout must be an integer from 1 to 300000 milliseconds.
-- The selected adapter must resolve the model and support any explicit reasoning effort.
-- Saving does not contact the gateway or verify backend model identity.
-
-The core reviewer is not a volatile settings consumer. The shared ConfigEditor operation uses its normal configuration reload lifecycle. A save can move Auto sessions to confined `workspace-write`. Select Auto again after the new configuration is active. The main model stays unchanged. There is no main-model fallback for review failure.
-
-## Management tool
-
-The deferred `auto_review_settings` tool uses the same Host operation as the form:
-
-1. Call `get` to read the reviewer and current revision.
-2. Call `set` with the reviewer values and that revision as `expectedRevision`.
-3. If another edit changed the revision, read again before retrying.
-
-The tool cannot select Auto, approve a pending call, or run a gateway test. A successful save proves a configuration write, not a successful model request.
-
-## Remove
-
-Remove this companion through Plugin Manager. This removes the form and management tool. The review gate and its saved configuration remain.
-
-To roll back the gate, disable or remove the whole root bundle. Do not disable only its review row: the root patch would still disable the built-in reviewer. Confirm the live component state before selecting Auto again.
-
-## Development
+## Build and tests
 
 From the repository root:
 
@@ -60,14 +29,14 @@ npm run build:gui
 npm run check
 ```
 
-The separate build-tools directory supplies the development compiler. Commit the generated browser artifact with source changes. Shared APIs are declared in peer and development dependencies. No installation script builds the GUI.
+The builder uses ordinary module imports, not Function.toString. Tests compare the generated artifact with a fresh in-memory build and check its ModuleLoader envelope. They do not replace React or claim browser rendering.
 
-## Verification and safety
+The root package ships the prebuilt artifact and requires no installation build script. Its production peers and runtime files are checked from an extracted package using only declared shipped-runtime dependencies.
 
-The current suite passed 98 tests, including 16 real Registry, Gateway, and ToolRuntime RPC tests. A live Host settings read and same-values save passed without changing the reviewer route. Client slot registration is active. Browser appearance and clicks remain unverified. Actual gateway tests are separate from settings writes; no gateway result is claimed by these checks.
+## Safety and limits
 
-See [GUI verification](../../docs/gui-verification.md) for the exact snapshot and limits, and the [project README](../../README.md) for gate behavior and setup.
+The gate remains fail-closed and independent of the main model. CAS, cancellation and raw configuration preservation are intentional safeguards. The locally configured GPT Pro gateway uses HTTP without TLS; review evidence may contain private data.
 
-The locally configured GPT Pro gateway uses HTTP. Review evidence can contain private project data and has no TLS protection on that connection. Model review is probabilistic. Do not use it as the only control for sensitive systems.
+The SDK's generic activation-failure rollback remains a platform limitation. This plugin now rejects the observed invalid inputs before persistence; it does not catch or mask arbitrary startup failures. The approved migration plan uses stopped Host processes and retained old artifacts, verified separately in isolation. Actual installation still requires approval and GUI acceptance.
 
-This package uses the [MIT license](LICENSE). See [third-party notices](THIRD-PARTY-NOTICES.md). Reports use short, direct English; they are not certified for full ASD-STE100 compliance.
+See the root [license](../../LICENSE) and bundled [third-party notices](THIRD-PARTY-NOTICES.md).

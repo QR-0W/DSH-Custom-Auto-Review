@@ -1,9 +1,8 @@
 import { randomInt } from 'node:crypto';
-import { reviewMutation } from './domain.js';
+import { normalizeReviewer, reviewMutation } from './domain.js';
 
 function reviewerValue(value) {
-  return Object.fromEntries(reviewMutation({ ...value, timeoutMs: value?.timeoutMs ?? 60000 })
-    .filter(op => op.op === 'set').map(op => [op.path[1], op.value]));
+  return normalizeReviewer({ ...value, timeoutMs: value?.timeoutMs ?? 60000 });
 }
 
 export const REVIEW_ENTRY = 'include:independent-auto-review';

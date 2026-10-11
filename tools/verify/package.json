@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Test the installed review gate with isolated scopes and temporary sessions.",
+  "description": "Source-checkout-only local gate verification helper; not a standalone distribution.",
   "exports": {".": "./index.js"},
-  "files": ["index.js", "run-v2.js", "cordis.patch.yml"],
+  "files": ["index.js", "cordis.patch.yml", "README.md"],
   "peerDependencies": {
     "@deepseek-ai/dsh-config-editor": "0.2.0-rc.2",
     "@deepseek-ai/dsh-llm": "0.2.0-rc.2",

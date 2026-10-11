@@ -1,3 +1,8 @@
+import { reviewDraft, reviewConfigEntries, reviewViewPlugin } from './domain.js';
+import { createReviewClient, reviewErrorKey } from './client-requests.js';
+import { clientContribution } from './rpc.js';
+
+export function factory(require) {
 const React = require('react');
 const h = React.createElement;
 const dictionaries = {
@@ -17,6 +22,11 @@ const dictionaries = {
     conflict: 'Saved settings changed while you edited. Reload saved values to continue.',
     providerError: 'Enter a review provider.', modelError: 'Enter a review model.',
     effortError: 'Enter a valid reasoning identifier.', timeoutError: 'Timeout must be an integer from 1 to 300000.',
+    loadError: 'Cannot read review settings. Check the Host connection and enable the review component, then reload.',
+    reloadError: 'Reload failed. Your draft remains on this page.',
+    protocolError: 'The Host returned an invalid response. Refresh this page after checking the plugin version.',
+    invalidRequest: 'The Host rejected the settings format. Reload and check all fields.',
+    serviceUnavailable: 'The settings service is unavailable. Enable the settings component and refresh this page.',
     transportError: 'The save failed. Your draft remains on this page.', unsaved: 'Unsaved changes',
   },
   zh: {
@@ -35,42 +45,28 @@ const dictionaries = {
     conflict: '编辑期间，已保存的设置发生变化。请重新加载已保存值后继续。',
     providerError: '请填写审查供应商。', modelError: '请填写审查模型。',
     effortError: '请填写有效的推理标识。', timeoutError: '超时必须是 1 至 300000 的整数。',
+    loadError: '无法读取审查设置。请检查 Host 连接并启用审查组件，然后重新加载。',
+    reloadError: '重新加载失败。草稿仍保留在此页面。',
+    protocolError: 'Host 返回了无效响应。请检查插件版本后刷新页面。',
+    invalidRequest: 'Host 拒绝了设置格式。请重新加载并检查各字段。',
+    serviceUnavailable: '设置服务不可用。请启用设置组件后刷新页面。',
     transportError: '保存失败。草稿仍保留在此页面。', unsaved: '有未保存的修改',
   },
 };
 
-function remoteValue(result) {
-  if (result?.ok === true) return result.value;
-  if (result?.ok === false) throw result.error;
-  throw new Error('Invalid remote settings response.');
-}
-
 function HostReviewForm({ api, t }) {
-  const [state, setState] = React.useState({ status: 'loading', mode: 'host', writable: false });
-  const alive = React.useRef(true);
-  async function refresh() {
-    const data = remoteValue(await api.read());
-    const next = { status: 'ready', mode: 'host', writable: true, revision: data.revision, value: { reviewer: data.reviewer } };
-    if (alive.current) setState(next);
-    return next;
-  }
+  const [state, setState] = React.useState({ status: 'loading' });
+  const client = React.useMemo(() => createReviewClient(api, setState), [api]);
   React.useEffect(() => {
-    alive.current = true;
-    refresh().catch(() => { if (alive.current) setState({ status: 'unavailable', mode: 'host', writable: false }); });
-    return () => { alive.current = false; };
-  }, [api]);
-  const form = { state, refresh, async mutate(ops, expectedRevision) {
-    const reviewer = {};
-    for (const op of ops) if (op.op === 'set') reviewer[op.path[1]] = op.value;
-    const data = remoteValue(await api.save({ reviewer, expectedRevision }));
-    if (alive.current) setState({ status: 'ready', mode: 'host', writable: true, revision: data.revision, value: { reviewer: data.reviewer } });
-    return true;
-  } };
-  return h(ReviewForm, { form, t });
+    client.activate();
+    // The controller publishes only current failures; initial load has no event caller.
+    void client.refresh().catch(() => {});
+    return () => client.dispose();
+  }, [client]);
+  return h(ReviewForm, { client, state, t });
 }
 
-function ReviewForm({ form, t }) {
-  const state = form?.state;
+function ReviewForm({ client, state, t }) {
   const [draft, setDraft] = React.useState(() => reviewDraft(state));
   const [revision, setRevision] = React.useState(state?.revision);
   const [dirty, setDirty] = React.useState(false);
@@ -85,15 +81,15 @@ function ReviewForm({ form, t }) {
       setDraft(reviewDraft(state)); setRevision(state.revision);
     }
   }, [state?.revision, state?.status, dirty, busy]);
-  const editable = state?.status === 'ready' && state.writable && state.mode === 'host';
+  const editable = state?.status === 'ready';
   const conflict = dirty && state?.revision !== revision;
   async function reload() {
     if (locked.current) return;
     locked.current = true; setBusy(true);
     try {
-      const next = await form.refresh();
-      if (alive.current) { setDraft(reviewDraft(next)); setRevision(next.revision); setDirty(false); setNotice(null); }
-    } catch { if (alive.current) setNotice({ kind: 'error', key: 'transportError' }); }
+      const next = await client.refresh();
+      if (alive.current && next) { setDraft(reviewDraft(next)); setRevision(next.revision); setDirty(false); setNotice(null); }
+    } catch (error) { if (alive.current) setNotice({ kind: 'error', key: reviewErrorKey(error, 'reloadError') }); }
     finally { locked.current = false; if (alive.current) setBusy(false); }
   }
   async function save(event) {
@@ -101,14 +97,10 @@ function ReviewForm({ form, t }) {
     if (locked.current || !editable || conflict) return;
     locked.current = true; setBusy(true); setNotice(null);
     try {
-      await submitReview(form, draft, revision);
-      if (alive.current) { setDirty(false); setNotice({ kind: 'success', key: 'saved' }); }
+      const saved = await client.save(draft, revision);
+      if (alive.current && saved) { setDraft(reviewDraft(saved)); setRevision(saved.revision); setDirty(false); setNotice({ kind: 'success', key: 'saved' }); }
     } catch (error) {
-      if (alive.current) {
-        const key = ({ provider: 'providerError', model: 'modelError', effort: 'effortError', timeout: 'timeoutError',
-          unavailable: 'unavailable', revision: 'conflict', refused: 'refused' })[error.message] ?? 'transportError';
-        setNotice({ kind: 'error', key });
-      }
+      if (alive.current) setNotice({ kind: 'error', key: reviewErrorKey(error, 'transportError') });
     } finally {
       locked.current = false; if (alive.current) setBusy(false);
     }
@@ -124,7 +116,7 @@ function ReviewForm({ form, t }) {
   return h('form', { className: 'iar-form', onSubmit: save, 'aria-busy': busy },
     h('p', { className: 'iar-intro' }, t('intro')),
     state?.status === 'loading' ? h('p', { role: 'status' }, t('loading')) : null,
-    !editable && state?.status !== 'loading' ? h('p', { role: 'alert', className: 'iar-error' }, t('unavailable')) : null,
+    !editable && state?.status !== 'loading' ? h('p', { role: 'alert', className: 'iar-error' }, t(state?.errorKey ?? 'unavailable')) : null,
     field('provider', 'text', 'routeHint'), field('model', 'text'),
     field('reasoningEffort', 'text', 'effortHint', `${uid}-efforts`),
     h('datalist', { id: `${uid}-efforts` }, ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'].map(value => h('option', { key: value, value }))),
@@ -166,11 +158,15 @@ return {
     ctx.effect(() => unmount);
     ctx.effect(() => ctx.locale.register('independentAutoReview', 'en', dictionaries.en));
     ctx.effect(() => ctx.locale.register('independentAutoReview', 'zh', dictionaries.zh));
-    for (const entry of reviewConfigEntries()) {
-      ctx.slots.inject(entry.name, () => ctx.slots.register({
-        ...entry, locale: 'independentAutoReview',
-      }, props => props.view === 'summary' ? h('span', null, props.t('summary')) :
-        h(React.Fragment, null, h('style', null, css), h(HostReviewForm, { api: ctx.remote.independentAutoReviewSettings, t: props.t }))));
-    }
+    ctx.plugin(reviewViewPlugin(viewCtx => {
+      const api = viewCtx.remote.independentAutoReviewSettings;
+      for (const entry of reviewConfigEntries()) {
+        viewCtx.slots.inject(entry.name, () => viewCtx.slots.register({
+          ...entry, locale: 'independentAutoReview',
+        }, props => props.view === 'summary' ? h('span', null, props.t('summary')) :
+          h(React.Fragment, null, h('style', null, css), h(HostReviewForm, { api, t: props.t }))));
+      }
+    }));
   },
 };
+}

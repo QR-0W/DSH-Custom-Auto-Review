@@ -1,8 +1,8 @@
 {
   "name": "@local/dsh-independent-auto-review",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "private": true,
-  "description": "Use a separate model for DSH Auto Review. Keep the main model unchanged.",
+  "description": "Use and configure a separate model for DSH Auto Review. Keep the main model unchanged.",
   "type": "module",
   "license": "MIT",
   "repository": {"type": "git", "url": "git+https://github.com/QR-0W/dsh-independent-auto-review.git"},
@@ -11,10 +11,12 @@
   "main": "./src/auto-review.js",
   "exports": {
     ".": "./src/auto-review.js",
+    "./settings": "./tools/gui/host.js",
+    "./client": "./tools/gui/client.js",
     "./package.json": "./package.json",
     "./locale/*.json": "./locale/*.json"
   },
-  "files": ["src", "locale", "cordis.patch.yml", "LICENSE", "NOTICE.md", "README.md"],
+  "files": ["src", "locale", "cordis.patch.yml", "LICENSE", "NOTICE.md", "README.md", "tools/gui/host.js", "tools/gui/domain.js", "tools/gui/service.js", "tools/gui/rpc.js", "tools/gui/client.js", "tools/gui/locale", "tools/gui/THIRD-PARTY-NOTICES.md"],
   "engines": {"node": ">=24"},
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.0.4",
@@ -24,7 +26,10 @@
     "@deepseek-ai/dsh-permission-presets": "0.2.0-rc.2",
     "@deepseek-ai/dsh-session": "0.2.0-rc.2",
     "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-util-values": "0.2.0-rc.2"
+    "@deepseek-ai/dsh-util-values": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-config-editor": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-typert-protocol": "0.2.0-rc.2",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "~4.0.4",
@@ -37,6 +42,12 @@
     "@deepseek-ai/dsh-util-values": "0.2.0-rc.2",
     "@deepseek-ai/dsh-scope": "0.2.0-rc.2",
     "@deepseek-ai/dsh-typert-protocol": "0.2.0-rc.2",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.5",
+    "@deepseek-ai/dsh-app-boot": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-config-editor": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-session-projection": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-typert-registry": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-api-gateway": "0.2.0-rc.2",
     "zod": "4.6.5"
   },
   "scripts": {
@@ -45,7 +56,11 @@
     "build:gui": "node tools/gui/build.mjs",
     "check:gui": "node --check tools/gui/host.js && node --check tools/gui/rpc.js && node --check tools/gui/service.js && node --check tools/gui/client.js",
     "check": "node --check src/auto-review.js && node --check src/reviewer.js && npm run check:gui && npm test",
+    "check:migration": "npm run check && node --import ./test/register-host.mjs --test test/cold-migration.acceptance.mjs",
     "test:live": "node --import ./test/register-host.mjs test/live-review.mjs"
   },
-  "dsh": {"bundle": {"patch": "./cordis.patch.yml"}}
+  "dsh": {
+    "bundle": {"patch": "./cordis.patch.yml"},
+    "client": {"platform": "web", "inject": ["@deepseek-ai/dsh-client-ui-plugin-manager"]}
+  }
 }

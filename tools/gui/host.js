@@ -2,7 +2,7 @@ import { TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
 import { ReviewSettingsStore } from './service.js';
 import { hostContribution, SETTINGS_SERVICE } from './rpc.js';
 
-export const name = 'independent-auto-review-gui';
+export const name = 'independent-auto-review-settings-host';
 export const inject = ['configEditor', 'tools', 'typert'];
 
 export class ReviewSettingsRemote extends TypertRemoteService {

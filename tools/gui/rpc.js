@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const GUI_PACKAGE = '@local/dsh-independent-auto-review-settings';
+export const GUI_PACKAGE = '@local/dsh-independent-auto-review';
 export const SETTINGS_SERVICE = 'independentAutoReviewSettings';
 const reviewer = z.object({ provider: z.string().min(1), model: z.string().min(1), reasoningEffort: z.string().optional(), timeoutMs: z.number().int().min(1).max(300000) }).strict();
 const result = z.object({ namespace: z.literal('include:independent-auto-review'), revision: z.number().int().nonnegative(), reviewer, saved: z.boolean().optional(), autoMayRequireReselection: z.boolean().optional() }).strict();
