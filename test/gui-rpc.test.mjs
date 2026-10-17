@@ -7,13 +7,14 @@ import { ToolRuntime } from '@deepseek-ai/dsh-tools';
 import * as settingsPlugin from '../tools/gui/host.js';
 import { GUI_PACKAGE, SETTINGS_SERVICE, createDescriptors, clientContribution } from '../tools/gui/rpc.js';
 import { REVIEW_ENTRY } from '../tools/gui/service.js';
-import { fixture as executionFixture } from './fixtures.mjs';
+import { fixture as executionFixture, ownerPeer } from './fixtures.mjs';
 
 const initialReviewer = { provider: 'gptpro', model: 'codex-auto-review', reasoningEffort: 'medium', timeoutMs: 60000 };
 
 /** Real Cordis, TypertRegistry, Gateway and ToolRuntime. Only the persistence seam is isolated. */
 async function runtime() {
   const root = new Context();
+  const peer = ownerPeer(root);
   root.provide('systemPrompt', { tools: () => () => {} });
   const registry = new TypertRegistry(root);
   const gateway = new TypertGatewayService(root, TypertGatewayService.Config({}));
@@ -32,8 +33,9 @@ async function runtime() {
   const fiber = root.plugin(settingsPlugin);
   await fiber;
   return { root, registry, gateway, tools, editor, row, fiber, writes: () => writes,
-    read: () => gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'read', args: {} }),
-    save: request => gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'save', args: { request } }),
+    peer,
+    read: () => gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'read', args: {}, peer }),
+    save: request => gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'save', args: { request }, peer }),
     dispose: () => root.fiber.dispose(),
   };
 }
@@ -85,8 +87,8 @@ test('Real Gateway save shares the reload-safe operation and preserves other set
 }));
 
 test('Real Gateway rejects unexpected named wire fields before saving', t => using(t, async r => {
-  await assert.rejects(r.gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'read', args: { unexpected: true } }), error => error.code?.startsWith('gateway/'));
-  await assert.rejects(r.gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'save', args: { request: { expectedRevision: (await r.read()).revision, reviewer: initialReviewer }, extra: true } }), error => error.code?.startsWith('gateway/'));
+  await assert.rejects(r.gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'read', args: { unexpected: true }, peer: r.peer }), error => error.code?.startsWith('gateway/'));
+  await assert.rejects(r.gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'save', args: { request: { expectedRevision: (await r.read()).revision, reviewer: initialReviewer }, extra: true }, peer: r.peer }), error => error.code?.startsWith('gateway/'));
   assert.equal(r.writes(), 0);
 }));
 

@@ -8,7 +8,7 @@ const runtimeDir = process.env.DSH_RUNTIME_DIR ?? join(
   execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim(), '@deepseek-ai/dsh');
 const runtime = JSON.parse(await readFile(join(runtimeDir, 'package.json'), 'utf8'));
 const project = JSON.parse(await readFile(join(projectDir, 'package.json'), 'utf8'));
-if (runtime.version !== '0.2.0-rc.2') throw new Error('Runtime links require DSH 0.2.0-rc.2.');
+if (runtime.version !== '0.2.1-rc.1') throw new Error('Runtime links require DSH 0.2.1-rc.1.');
 
 // Validate all packages before making links. Do not install a second runtime.
 const peers = await Promise.all(Object.entries({ ...project.peerDependencies, ...project.devDependencies }).map(async ([name, range]) => {

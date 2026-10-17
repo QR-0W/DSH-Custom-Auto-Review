@@ -19,7 +19,7 @@ function realSession() {
 
 test('Build review evidence from a real DSH Session', () => {
   const f = realSession();
-  const snapshot = testing.snapshotAutoReview(f.agent, f.exec);
+  const snapshot = testing.snapshotAutoReview(f.agent, f.exec, '/project');
   assert.equal(snapshot.action.name, 'read');
   assert.equal(snapshot.history[0].role, 'human-instruction');
   assert.equal(snapshot.cwd, '/project');
@@ -27,10 +27,10 @@ test('Build review evidence from a real DSH Session', () => {
 
 test('Replayed session events produce the same review evidence', () => {
   const f = realSession();
-  const first = testing.snapshotAutoReview(f.agent, f.exec);
+  const first = testing.snapshotAutoReview(f.agent, f.exec, '/project');
   const restored = Session.create('restored-session', f.session.snapshotEvents(), { ...f.session.header, id: 'restored-session', isSeeded: true }, f.session.seq);
   f.agent.session = restored;
-  const second = testing.snapshotAutoReview(f.agent, f.exec);
+  const second = testing.snapshotAutoReview(f.agent, f.exec, '/project');
   assert.deepEqual(second, first);
 });
 
@@ -41,7 +41,7 @@ test('Review a PTC inner action once with its logged start and binding schema', 
   Object.assign(f.events[3].data, { name: 'run_code', arguments: raw });
   Object.assign(f.exec, { parent: Symbol('outer'), callId: 'inner-1', schema: f.schema });
   f.events.push({ seq: 4, type: 'tool/ptc-dispatch-start', data: { parentCallId: 'call-1', rootCallId: 'call-1', subCallId: 'inner-1', name: 'read', arguments: f.exec.arguments } });
-  const snapshot = testing.snapshotAutoReview(f.agent, f.exec);
+  const snapshot = testing.snapshotAutoReview(f.agent, f.exec, '/project');
   assert.equal(snapshot.action.mode, 'ptc-inner');
   const host = mockContext(); apply(host.ctx, { reviewer });
   assert.equal((await host.invoke(f.exec)).kind, 'allow');

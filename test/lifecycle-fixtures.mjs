@@ -14,7 +14,7 @@ import { PermissionPresetService } from '@deepseek-ai/dsh-permission-presets';
 import { SessionProjectionRegistry } from '@deepseek-ai/dsh-session-projection';
 import { Session, SESSION_FORMAT_VERSION } from '@deepseek-ai/dsh-session';
 import { SETTINGS_SERVICE } from '../tools/gui/rpc.js';
-import { fixture, decisionStream } from './fixtures.mjs';
+import { fixture, decisionStream, ownerPeer } from './fixtures.mjs';
 
 export const reviewer = { provider: 'gptpro', model: 'codex-auto-review', reasoningEffort: 'medium', timeoutMs: 60000 };
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
@@ -68,6 +68,7 @@ export async function lifecycleRuntime(t, { headless = false, stream = () => dec
   root.provide('profileContext', profile);
   const sessions = [];
   root.provide('sessions', { list: () => sessions });
+  root.provide('workingDirectory', { ensure: async () => dir });
   root.provide('shell', { sandboxMode: 'workspace-write' });
   root.provide('systemPrompt', { tools: () => () => {}, context: () => () => {}, getContextOrder: () => 0 });
   const requests = [];
@@ -104,10 +105,11 @@ export async function lifecycleRuntime(t, { headless = false, stream = () => dec
     f.agent.session = value;
     return { ...f, session: value };
   }
+  const peer = ownerPeer(root);
   return { root, dir, profile, raw, gate, settings, registry, tools, requests, session,
     editor: root.get('configEditor'),
     document: () => readFile(patchPath, 'utf8'),
-    read: () => gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'read', args: {} }),
-    save: request => gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'save', args: { request } }),
+    read: () => gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'read', args: {}, peer }),
+    save: request => gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'save', args: { request }, peer }),
   };
 }

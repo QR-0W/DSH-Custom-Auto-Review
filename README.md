@@ -2,13 +2,13 @@
 
 Use a separate model to review DSH tool calls. Keep the main model unchanged.
 
-This project targets DSH `0.2.0-rc.2` and Node 24. It replaces the built-in experimental Auto Review component. It does not replace the main agent or the model adapter. Other DSH versions are not verified.
+This project targets DSH `0.2.1-rc.1` and Node 24. It replaces the built-in experimental Auto Review component. It does not replace the main agent or the model adapter. Other DSH versions are not verified.
 
 ## Repository and distribution
 
 Public source repository: [QR-0W/dsh-independent-auto-review](https://github.com/QR-0W/dsh-independent-auto-review).
 
-**Version `0.2.0` combines the gate and settings into one installed package.** The local profile was migrated, the restarted Host reads the original reviewer configuration, and the user confirmed that the new GUI displays and saves correctly. Minimal pre-write validation and isolated cold migration/restoration tests also pass. The SDK has not been modified and generic automatic rollback is not claimed. See [verification status](docs/gui-verification.md) and [scope](docs/migration-goal.md).
+**Version `0.2.1` adapts the bundle to DSH `0.2.1-rc.1`.** The review policy and the separate review route are unchanged; the review evidence now reads the working directory through the Host `workingDirectory` service, and the retained upstream source is re-vendored at `0.2.1-rc.1`. The gate and settings still ship as one installed package. The local profile was migrated, the restarted Host reads the original reviewer configuration, and the user confirmed that the new GUI displays and saves correctly. Minimal pre-write validation and isolated cold migration/restoration tests also pass. The SDK has not been modified and generic automatic rollback is not claimed. See [verification status](docs/gui-verification.md) and [scope](docs/migration-goal.md).
 
 The new package contains two sibling Host components: the review gate and the settings service. The settings service is exported as `@local/dsh-independent-auto-review/settings`; it is not a separate installed package. The root also ships the Client form and its prebuilt artifact. No install-time build script is needed.
 

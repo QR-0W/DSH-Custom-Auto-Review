@@ -13,6 +13,7 @@ async function runtime(stream) {
   ctx.provide('approval', fake.ctx.approval);
   ctx.provide('permissionPresets', fake.ctx.permissionPresets);
   ctx.provide('sessions', fake.ctx.sessions);
+  ctx.provide('workingDirectory', fake.ctx.workingDirectory);
   const llm = new LlmRuntime(ctx);
   class Adapter extends LlmAdapter {
     providerInfo(id) { return { id, name: id }; }

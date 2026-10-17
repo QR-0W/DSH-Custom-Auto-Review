@@ -49,7 +49,8 @@ const inject = [
 	"llm",
 	"permissionPresets",
 	"sessions",
-	"tools"
+	"tools",
+	"workingDirectory"
 ];
 /** Return JSON text for one immutable logged value. */
 function json(value) {
@@ -213,14 +214,12 @@ function ptcAction(exec, start, visibleParentKeys) {
 * @param exec - immutable pending execution.
 * @returns the exact route and four data sections paired with {@link REVIEW_POLICY}.
 */
-function snapshotAutoReview(agent, exec) {
+function snapshotAutoReview(agent, exec, cwd) {
 	const { session } = agent;
 	const events = session.snapshotEvents();
 	const nodes = [...session.surface.nodes];
 	const header = session.requestHeader();
 	if (header === void 0 || header.config.provider.length === 0 || header.config.model.length === 0) throw new Error("auto-review: no complete request-header route is available");
-	const cwd = session.header.cwd;
-	if (cwd === void 0 || cwd.length === 0) throw new Error("auto-review: the session has no working directory");
 	const nativeCalls = events.filter((event) => event.type === "tool/call");
 	const { starts, openStep: currentStep } = scopePtcStarts(events);
 	const initialPromptSeq = directParentInitialPromptSeq(agent, events);
@@ -399,7 +398,7 @@ async function readDecision(stream) {
 }
 /** Review one frozen action with the configured review route. */
 async function classifyRisk(ctx, agent, exec, signal, reviewer) {
-	const snapshot = snapshotAutoReview(agent, exec);
+	const snapshot = snapshotAutoReview(agent, exec, await ctx.workingDirectory.ensure(agent, signal));
 	return requestDecision(ctx.llm, reviewer, signal, REVIEW_POLICY, reviewUserText(snapshot), readDecision);
 }
 /** Materialize the fixed model-facing final Auto denial plus optional UI detail. */

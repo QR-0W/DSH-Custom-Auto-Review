@@ -29,7 +29,7 @@ for (const raw of [
 });
 
 test('Keep the upstream review policy unchanged', () => {
-  const upstream = readFileSync(new URL('../vendor/auto-review-0.2.0-rc.2.js', import.meta.url), 'utf8');
+  const upstream = readFileSync(new URL('../vendor/auto-review-0.2.1-rc.1.js', import.meta.url), 'utf8');
   const match = upstream.match(/const REVIEW_POLICY = `([\s\S]*?)`;/);
   assert.equal(testing.REVIEW_POLICY, match[1]);
 });
@@ -81,13 +81,13 @@ test('Treat only durable user and direct-parent messages as instructions', () =>
 test('Reject a mismatch between the pending action and the logged action', () => {
   const f = fixture();
   f.exec.arguments = { file_path: '/private/secret' };
-  assert.throws(() => snapshotAutoReview(f.agent, f.exec), /disagrees/);
+  assert.throws(() => snapshotAutoReview(f.agent, f.exec, '/project'), /disagrees/);
 });
 
 test('Reject a missing or duplicate tool schema', () => {
   for (const tools of [[], [fixture().schema, fixture().schema]]) {
     const f = fixture(); f.header.tools = tools;
-    assert.throws(() => snapshotAutoReview(f.agent, f.exec), /missing or ambiguous/);
+    assert.throws(() => snapshotAutoReview(f.agent, f.exec, '/project'), /missing or ambiguous/);
   }
 });
 

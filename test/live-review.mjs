@@ -30,6 +30,7 @@ ctx.provide('credentials', {
   },
   async readRecord() { return undefined; },
 });
+ctx.provide('workingDirectory', { ensure: async () => '/project' });
 new LlmRuntime(ctx);
 applyPiAi(ctx, PiAiConfig(raw));
 const reviewer = { provider: 'gptpro', model: 'codex-auto-review', reasoningEffort: 'medium', timeoutMs: 60000 };

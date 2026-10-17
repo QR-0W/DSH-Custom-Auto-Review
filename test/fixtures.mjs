@@ -50,6 +50,7 @@ export function mockContext(stream = () => decisionStream(), { policy = 'ask', s
       registerAuto(fn) { admission = fn; return () => { admission = undefined; }; },
       set(session, preset) { transitions.push({ session, preset }); currentPreset = preset; },
     },
+    workingDirectory: { ensure: async () => '/project' },
     on(name, fn, options) {
       if (name !== 'tools/pre-execute' || !options.prepend) throw new Error('Unexpected event registration.');
       listener = fn;
@@ -66,4 +67,10 @@ export function mockContext(stream = () => decisionStream(), { policy = 'ask', s
     invoke(exec, next = async () => ({ kind: 'allow' })) { return listener(exec, next); },
     async dispose() { for (const dispose of disposers.reverse()) await dispose(); },
   };
+}
+
+/** In-process owner Peer for Gateway calls, shaped like the connection layer's PeerScope. */
+export function ownerPeer(ctx) {
+  const controller = new AbortController();
+  return { id: 'fixture-owner-peer', ctx, principal: { kind: 'owner' }, signal: controller.signal, interactions: 'none' };
 }
