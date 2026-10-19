@@ -1,10 +1,12 @@
-# Verification
+# Historical verification record
+
+This record describes the original independent-review release, not the current DSH-Custom-Auto-Review release. Private route identifiers are intentionally omitted. Consult the current README and release notes for supported versions and new verification results.
 
 ## Result
 
 The independent review bundle is installed in the `web` profile. The new review component is active. Its Config schema is available. The built-in review component is disabled by the bundle patch.
 
-The active review route is `gptpro / codex-auto-review / medium`. The timeout is 60000 ms.
+The active review route is the installation's privately configured reviewer with `medium` reasoning effort. The timeout is 60000 ms.
 
 ## Automated tests
 
@@ -30,7 +32,7 @@ That review found no other concrete blocking source defect in its snapshot.
 
 The official DSH pi-ai adapter sent three synthetic review requests. Both synthetic read actions produced `low / allow`. The fictional credential-send action produced `high / deny`.
 
-All requests used `gptpro / codex-auto-review / medium`. No tool body ran. No actual conversation history was sent. The test prepared metadata in memory.
+All requests used the installation's privately configured reviewer with `medium` reasoning effort. No tool body ran. No actual conversation history was sent. The test prepared metadata in memory.
 
 Run only with explicit permission:
 
@@ -44,7 +46,7 @@ A temporary Host bundle tested the installed gate through the live SessionStore,
 
 | Test | Review request | Tool body |
 | --- | --- | --- |
-| Main route `gptpro / gpt-6.1-sol` | Independent route | Ran once |
+| Main route A (private identifiers omitted) | Independent route | Ran once |
 | Main route `deepseek-official / deepseek-flash` | Independent route | Ran once |
 | Separate tool guard denies | Independent route | Did not run |
 | Logged action differs from arguments | None | Did not run |
@@ -78,4 +80,4 @@ Two existing optional-module import warnings remain: `otel` and `ui-settings-ses
 - A defective adapter that ignores abort can outlive the one-second cleanup wait. It cannot grant the pending call.
 - Model review is probabilistic. These results are not a security guarantee.
 
-The GPT Pro gateway uses HTTP. Review data has no TLS protection on that connection.
+The historical local test used a privately configured HTTP gateway. No endpoint is distributed by this project. Use HTTPS for any review evidence that crosses a network; transport security depends on the user's own provider configuration.

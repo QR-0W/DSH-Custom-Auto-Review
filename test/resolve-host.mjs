@@ -7,10 +7,8 @@ export function initialize({ root }) {
   requireHost = createRequire(join(root, 'package.json'));
 }
 export async function resolve(specifier, context, nextResolve) {
-  try {
-    return await nextResolve(specifier, context);
-  } catch (error) {
-    if (error.code !== 'ERR_MODULE_NOT_FOUND' || !specifier.startsWith('@deepseek-ai/')) throw error;
+  if (specifier.startsWith('@deepseek-ai/')) {
     return { url: pathToFileURL(requireHost.resolve(specifier)).href, shortCircuit: true };
   }
+  return nextResolve(specifier, context);
 }

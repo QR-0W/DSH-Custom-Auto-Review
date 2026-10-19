@@ -1,4 +1,41 @@
-export const reviewer = { provider: 'gptpro', model: 'codex-auto-review', timeoutMs: 1000 };
+export const reviewer = { provider: 'fixture-provider', model: 'fixture-reviewer', timeoutMs: 1000 };
+
+export function llmDirectory() {
+  const calls = [];
+  const guardPrivate = value => {
+    for (const field of ['credentials', 'baseURL']) Object.defineProperty(value, field, {
+      get() { throw new Error(`Unexpected private field access: ${field}`); },
+    });
+    return value;
+  };
+  const provider = guardPrivate({ id: 'fixture-provider', name: 'Synthetic test provider' });
+  const model = guardPrivate({ provider: 'fixture-provider', id: 'fixture-reviewer', name: 'Synthetic reviewer' });
+  const modelInfo = guardPrivate({
+    provider: 'fixture-provider', id: 'fixture-reviewer', name: 'Synthetic reviewer',
+    reasoning: {
+      efforts: [
+        { id: 'fixture-effort', name: 'Synthetic default effort' },
+        { id: 'fixture-alternate-effort', name: 'Synthetic alternate effort' },
+      ],
+      defaultEffort: 'fixture-effort',
+    },
+  });
+  return {
+    calls,
+    llm: {
+      listProviders() { calls.push({ method: 'listProviders' }); return [provider]; },
+      async listModels(providerId) {
+        calls.push({ method: 'listModels', provider: providerId });
+        return providerId === provider.id ? [model] : [];
+      },
+      async resolveModelInfo(providerId, modelId) {
+        calls.push({ method: 'resolveModelInfo', provider: providerId, model: modelId });
+        if (providerId !== provider.id || modelId !== model.id) throw new Error('synthetic model is unavailable');
+        return modelInfo;
+      },
+    },
+  };
+}
 
 export function fixture({ mainProvider = 'main-provider', mainModel = 'main-model', parent = false } = {}) {
   const schema = { name: 'read', description: 'Read one project file.', parameters: { type: 'object', properties: { file_path: { type: 'string' } } } };
@@ -41,7 +78,7 @@ export function mockContext(stream = () => decisionStream(), { policy = 'ask', s
   const calls = [];
   const transitions = [];
   const ctx = {
-    llm: { stream(options) { calls.push(options); return stream(options); }, listProviders: () => [{ id: 'gptpro', name: 'GPT Pro' }] },
+    llm: { stream(options) { calls.push(options); return stream(options); }, listProviders: () => [{ id: 'fixture-provider', name: 'Synthetic test provider' }] },
     approval: { overrideOf: () => policy },
     sessions: { list: () => sessions },
     permissionPresets: {

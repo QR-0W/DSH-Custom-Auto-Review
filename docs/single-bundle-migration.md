@@ -1,5 +1,7 @@
 # Single-bundle migration — completed locally
 
+> Historical 0.2.0 migration record. It does not describe the installation or GUI acceptance of DSH Custom Auto Review 0.3.0.
+
 The root package `@local/dsh-independent-auto-review` 0.2.0 is installed. The old settings companion was removed. After the actual Host process was restarted, the user confirmed that the new form displays and saves correctly.
 
 ## Package shape
@@ -17,7 +19,7 @@ The logical service and tool names remain `independentAutoReviewSettings` and `a
 2. The old Host process remained alive. Package inventory showed 0.2.0, but the settings component was inactive and no form was registered. Installation metadata alone was not treated as successful activation.
 3. Restarting the VS Code extension/extension host did not stop the old service, which the extension was reusing.
 4. The user explicitly authorized ending that process, then reopened DSH through the extension. The listener PID changed, the settings tool became callable and the root Client form registered successfully.
-5. The Host read preserved `gptpro / codex-auto-review / high / 60000`. The user then explicitly confirmed GUI display and saving.
+5. The Host read preserved the locally configured provider/model, `high` reasoning effort, and a 60000 ms timeout. The user then explicitly confirmed GUI display and saving.
 
 No SDK change, main-model change, automatic Auto selection or version exemption was made. After the user prohibited more backups and fallback logic, no additional backup or automatic recovery mechanism was added.
 

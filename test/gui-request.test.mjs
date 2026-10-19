@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createReviewClient, reviewErrorKey } from '../tools/gui/client-requests.js';
 
-const reviewer = { provider: 'gptpro', model: 'codex-auto-review', timeoutMs: 60000 };
+const reviewer = { provider: 'fixture-provider', model: 'fixture-reviewer', timeoutMs: 60000 };
 const ok = revision => ({ ok: true, value: { reviewer, revision } });
 function fixture() {
   const requests = [], states = [];

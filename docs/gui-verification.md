@@ -1,5 +1,7 @@
 # Single-bundle verification — 0.2.0
 
+> Historical record for 0.2.0, not acceptance evidence for DSH Custom Auto Review 0.3.0. Current behavior and limits are documented in the root README and maintenance policy.
+
 Target: DSH `0.2.0-rc.2`, Node `v24.19.0`, root package `0.2.0`. The local profile has been migrated and the user confirmed the new GUI displays and saves correctly.
 
 ## Current results
@@ -47,10 +49,10 @@ npm run check
 IAR_ROLLBACK_DIR=/path/to/private/rollback-baseline npm run check:migration
 ```
 
-These commands are offline checks, not authorization to stop a user's Host. In the completed local migration, the old process initially remained alive after package replacement and extension restarts. After an explicitly authorized termination, the VS Code extension started a new Host process; the settings service and root form then became active. A live read retained `gptpro / codex-auto-review / high / 60000`. The user confirmed both display and saving. No additional backup or automatic recovery was introduced after the user prohibited them.
+These commands are offline checks, not authorization to stop a user's Host. In the completed local migration, the old process initially remained alive after package replacement and extension restarts. After an explicitly authorized termination, the VS Code extension started a new Host process; the settings service and root form then became active. A live read retained the locally configured provider/model, `high` reasoning effort, and a 60000 ms timeout. The user confirmed both display and saving. No additional backup or automatic recovery was introduced after the user prohibited them.
 
 ## Limits and privacy
 
-The new single-bundle display/save confirmation is separate from the earlier two-bundle observation. No separate Reload-button, keyboard or light/dark-theme acceptance was recorded. No real model request was made for these tests. The configured GPT Pro gateway uses HTTP without TLS; review evidence may contain private data.
+The new single-bundle display/save confirmation is separate from the earlier two-bundle observation. No separate Reload-button, keyboard or light/dark-theme acceptance was recorded. No real model request was made for these tests. The historical local provider used HTTP without TLS; review evidence may contain private data. This project distributes no endpoint, credentials, provider route or free service.
 
 See [Goal boundaries](migration-goal.md), [migration steps](single-bundle-migration.md), and [historical gate checks](verification.md).

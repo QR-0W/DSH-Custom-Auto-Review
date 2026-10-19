@@ -41,8 +41,8 @@ export async function submitReview(api, draft, expectedRevision) {
 /** Mount RPC first, then start an owned view with the namespace explicitly injected. */
 export function reviewViewPlugin(register) {
   return {
-    name: 'independent-auto-review-settings-view',
-    inject: ['slots', 'remote', 'remote.independentAutoReviewSettings'],
+    name: 'dsh-custom-auto-review-settings-view',
+    inject: ['slots', 'remote', 'remote.dshCustomAutoReviewSettings'],
     apply: register,
   };
 }
@@ -50,7 +50,7 @@ export function reviewViewPlugin(register) {
 /** The single installed card and its internal review-row alternate route. */
 export function reviewConfigEntries() {
   return [
-    { name: 'plugins.bundle.config', key: '@local/dsh-independent-auto-review' },
-    { name: 'plugins.row.config', key: '@local/dsh-independent-auto-review#independent-auto-review' },
+    { name: 'plugins.bundle.config', key: '@local/dsh-custom-auto-review' },
+    { name: 'plugins.row.config', key: '@local/dsh-custom-auto-review#dsh-custom-auto-review' },
   ];
 }

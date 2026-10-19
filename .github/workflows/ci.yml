@@ -1,0 +1,52 @@
+name: Compatibility and GitHub releases
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh: [0.2.1-rc.1, 0.2.1-rc.2]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install -g @deepseek-ai/dsh@${{ matrix.dsh }} --ignore-scripts
+      - run: npm run link:runtime
+      - run: npm ci --ignore-scripts --prefix tools/gui/build-tools
+      - run: npm run check
+      - run: npm run check:upstream
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node -e "require('node:assert/strict').equal(process.env.GITHUB_REF_NAME, 'v' + require('./package.json').version)"
+      - run: npm install -g @deepseek-ai/dsh@0.2.1-rc.2 --ignore-scripts
+      - run: npm run link:runtime
+      - run: npm ci --ignore-scripts --prefix tools/gui/build-tools
+      - run: npm run check:build
+      - run: mkdir -p dist && npm pack --ignore-scripts --pack-destination dist
+      - run: sha256sum *.tgz > SHA256SUMS
+        working-directory: dist
+      - name: Upload versioned archives to GitHub only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/*.tgz dist/SHA256SUMS --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.tgz dist/SHA256SUMS --verify-tag --generate-notes
+          fi

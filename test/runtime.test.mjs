@@ -20,7 +20,7 @@ async function runtime(stream) {
     resolveModel(provider, id) { return Promise.resolve({ provider, id, name: id, inputModalities: ['text'], context: { contextWindow: 272000 } }); }
     stream(options) { fake.calls.push(options); return stream(options); }
   }
-  llm.registerAdapter(['gptpro'], new Adapter());
+  llm.registerAdapter(['fixture-provider'], new Adapter());
   const tools = new ToolRuntime(ctx);
   apply(ctx, { reviewer });
   const f = fixture();
@@ -39,8 +39,8 @@ test('The real tool registry runs the body after a valid review allow', async ()
     const result = await r.tools.execute(r.f.exec);
     assert.equal(result.isError, false, JSON.stringify(result));
     assert.equal(r.bodyCalls(), 1);
-    assert.equal(r.fake.calls[0].provider, 'gptpro');
-    assert.equal(r.fake.calls[0].model, 'codex-auto-review');
+    assert.equal(r.fake.calls[0].provider, 'fixture-provider');
+    assert.equal(r.fake.calls[0].model, 'fixture-reviewer');
   } finally { await r.ctx.fiber.dispose(); }
 });
 

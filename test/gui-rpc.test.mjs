@@ -7,15 +7,19 @@ import { ToolRuntime } from '@deepseek-ai/dsh-tools';
 import * as settingsPlugin from '../tools/gui/host.js';
 import { GUI_PACKAGE, SETTINGS_SERVICE, createDescriptors, clientContribution } from '../tools/gui/rpc.js';
 import { REVIEW_ENTRY } from '../tools/gui/service.js';
-import { fixture as executionFixture, ownerPeer } from './fixtures.mjs';
+import { fixture as executionFixture, llmDirectory, ownerPeer } from './fixtures.mjs';
 
-const initialReviewer = { provider: 'gptpro', model: 'codex-auto-review', reasoningEffort: 'medium', timeoutMs: 60000 };
+const initialReviewer = { provider: 'fixture-provider', model: 'fixture-reviewer', reasoningEffort: 'fixture-effort', timeoutMs: 60000 };
 
 /** Real Cordis, TypertRegistry, Gateway and ToolRuntime. Only the persistence seam is isolated. */
 async function runtime() {
   const root = new Context();
   const peer = ownerPeer(root);
+  const directory = llmDirectory();
+  let credentialReads = 0;
   root.provide('systemPrompt', { tools: () => () => {} });
+  root.provide('llm', directory.llm);
+  root.provide('credentials', { async resolve() { credentialReads++; throw new Error('synthetic credential access denied'); } });
   const registry = new TypertRegistry(root);
   const gateway = new TypertGatewayService(root, TypertGatewayService.Config({}));
   const tools = new ToolRuntime(root);
@@ -32,8 +36,9 @@ async function runtime() {
   root.provide('configEditor', editor);
   const fiber = root.plugin(settingsPlugin);
   await fiber;
-  return { root, registry, gateway, tools, editor, row, fiber, writes: () => writes,
+  return { root, registry, gateway, tools, editor, row, fiber, directory, credentialReads: () => credentialReads, writes: () => writes,
     peer,
+    call: (method, args = {}) => gateway.invoke({ namespace: SETTINGS_SERVICE, method, args, peer }),
     read: () => gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'read', args: {}, peer }),
     save: request => gateway.invoke({ namespace: SETTINGS_SERVICE, method: 'save', args: { request }, peer }),
     dispose: () => root.fiber.dispose(),
@@ -52,7 +57,7 @@ test('Real Typert registry accepts the settings contribution and binds both endp
   const contribution = r.registry.getPackage(GUI_PACKAGE);
   assert.ok(contribution);
   assert.equal(contribution.model.services[0].key, SETTINGS_SERVICE);
-  for (const method of ['read', 'save']) {
+  for (const method of ['read', 'save', 'catalog']) {
     const descriptor = r.registry.local.get(`${SETTINGS_SERVICE}/${method}`);
     assert.equal(descriptor.service, SETTINGS_SERVICE);
     assert.equal(descriptor.result.mode, 'strict');
@@ -107,7 +112,7 @@ for (const [name, change] of [
 
 test('Real Gateway saves empty effort as the inherited bundle default', t => using(t, async r => {
   const result = await r.save({ expectedRevision: (await r.read()).revision, reviewer: { ...initialReviewer, reasoningEffort: '' } });
-  assert.equal(result.reviewer.reasoningEffort, 'medium');
+  assert.equal(result.reviewer.reasoningEffort, undefined);
 }));
 
 test('Real Gateway propagates stale revision refusal without changing settings', t => using(t, async r => {

@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ReviewSettingsStore, REVIEW_ENTRY } from '../tools/gui/service.js';
+import { llmDirectory } from './fixtures.mjs';
 
-const initial = { reviewer: { provider: 'gptpro', model: 'codex-auto-review', reasoningEffort: 'medium', timeoutMs: 60000 }, unrelated: { keep: true } };
+const initial = { reviewer: { provider: 'fixture-provider', model: 'fixture-reviewer', reasoningEffort: 'fixture-effort', timeoutMs: 60000 }, unrelated: { keep: true } };
 function fixture() {
   const row = { entry: { id: REVIEW_ENTRY, options: { config: structuredClone(initial) }, fiber: { config: structuredClone(initial) } }, inherited: structuredClone(initial) };
   let writes = 0;
@@ -11,7 +12,8 @@ function fixture() {
     const next = change(structuredClone(entry.options.config), structuredClone(row.inherited));
     writes++; entry.options.config = next; entry.fiber.config = structuredClone(next);
   } };
-  return { row, editor, store: new ReviewSettingsStore(editor, 0), writes: () => writes };
+  const directory = llmDirectory();
+  return { row, editor, store: new ReviewSettingsStore(editor, 0, directory.llm), writes: () => writes };
 }
 
 test('Shared settings read exposes only the independent reviewer', () => {
@@ -45,10 +47,11 @@ test('Shared settings rechecks the fence inside the ConfigEditor transaction', a
   await assert.rejects(f.store.save({ expectedRevision: f.store.read().revision, reviewer: initial.reviewer }), /refused/);
 });
 
-test('Shared settings restores inherited effort, not an incomplete override', async () => {
+test('Shared settings clears the effort override for the adapter default', async () => {
   const f = fixture();
   const result = await f.store.save({ expectedRevision: f.store.read().revision, reviewer: { ...initial.reviewer, reasoningEffort: '' } });
-  assert.equal(result.reviewer.reasoningEffort, 'medium');
+  assert.equal(result.reviewer.reasoningEffort, undefined);
+  assert.equal(f.row.entry.options.config.reviewer.reasoningEffort, null);
 });
 
 test('Shared settings validation prevents any persistence', async () => {

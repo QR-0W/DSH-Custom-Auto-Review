@@ -1,42 +1,39 @@
-# Integrated Auto Review settings
+# DSH Custom Auto Review settings
 
-This directory contains the settings Host component, Client source and generated browser artifact for the root `@local/dsh-independent-auto-review` package. It is no longer a separate installable companion.
+This directory contains the settings Host component, Client source and generated browser artifact shipped by `@local/dsh-custom-auto-review`. It is not a separate bundle.
 
-Version `0.2.0` is installed in the verified local profile as one package. The Host reads the preserved reviewer settings, and the user confirmed GUI display and saving. Pre-write rejection and isolated cold package restoration also pass. See [current verification](../../docs/gui-verification.md) for limits.
+## Ownership and discovery
 
-## Ownership
+The root bundle inserts the review gate and settings Host as sibling Loader rows. The strict Remote service `dshCustomAutoReviewSettings` provides `read`, `save` and `catalog`. The GUI and `auto_review_settings` tool share the same revision-checked settings store.
 
-The root bundle inserts the gate and settings Host as sibling Loader rows. The settings service uses the shared ConfigEditor operation for both the GUI and `auto_review_settings` tool. It does not own or change the main model, select Auto, or approve calls.
+`catalog` reads public provider/model IDs, names and reasoning capabilities through DSH's LLM directory. It does not read endpoints or credentials, stream a model response, or change settings. Provider, model and effort controls are real selects. Unsupported saved values remain visible and cannot be silently substituted or saved.
 
-The Client mounts its strict Remote contribution before creating the child view that explicitly injects `remote.independentAutoReviewSettings`. The root bundle card and the gate row alternate route render the same form. There is no legacy companion-card route or package alias.
+The initial reviewer route is empty, so the gate does not register Auto. Saving a valid user-selected route makes the gate available without selecting Auto or changing the main model. A missing or invalid route never falls back to the main model.
 
-## Request behavior
+## Requests and persistence
 
-The form sends normalized reviewer values and the revision it read directly to the Host. Unknown raw configuration is preserved by the Host edit. Blank effort restores inherited configuration; timeout is an integer from 1 to 300000 milliseconds.
+Only the latest request generation can update the form or capability directory. Failed saves preserve the draft. Save validates the selected route and effort, checks the read revision, then rechecks raw/inherited configuration inside ConfigEditor before writing. Unknown raw fields are preserved.
 
-Only the latest Client request generation may update the page. An old success or old failure, including after effect cleanup/reactivation, cannot overwrite a newer request. Failed saves retain drafts. Diagnostics show allowlisted categories rather than arbitrary potentially private Host messages.
+Blank effort means the selected adapter's default. An explicit `null` mask prevents an inherited effort from reappearing; it is normalized away before model dispatch. Timeout is an integer from 1 to 300000 milliseconds.
 
-Saving reloads the gate and can move Auto sessions to confined permissions. The user must select Auto again if appropriate. Saving does not test gateway connectivity or backend model identity.
+A gate reload cancels and drains in-flight reviews and returns Auto sessions to workspace-write, preserving an explicit never-ask policy. Users must deliberately reselect Auto. Saving and directory inspection do not test provider connectivity or backend model identity.
 
 ## Build and tests
 
-From the repository root:
+From the repository root, with a supported DSH runtime installed:
 
 ```sh
 npm run link:runtime
 npm ci --ignore-scripts --prefix tools/gui/build-tools
 npm run build:gui
 npm run check
+npm run check:upstream
 ```
 
-The builder uses ordinary module imports, not Function.toString. Tests compare the generated artifact with a fresh in-memory build and check its ModuleLoader envelope. They do not replace React or claim browser rendering.
+The committed Client is reproducibly built from ordinary module imports. Strict RPC, real ConfigEditor/Loader reloads, tool execution, packed-bundle restoration and unconfigured startup are exercised with synthetic adapters in temporary profiles. These tests do not establish browser appearance or live-provider acceptance.
 
-The root package ships the prebuilt artifact and requires no installation build script. Its production peers and runtime files are checked from an extracted package using only declared shipped-runtime dependencies.
+## Privacy
 
-## Safety and limits
+Review evidence can include private project and session data. Use an approved provider and HTTPS whenever evidence crosses a network. Independent route selection does not isolate shared session context, redact evidence or guarantee a safe decision. No provider endpoint, credentials, model catalog or model access is distributed by this project.
 
-The gate remains fail-closed and independent of the main model. CAS, cancellation and raw configuration preservation are intentional safeguards. The locally configured GPT Pro gateway uses HTTP without TLS; review evidence may contain private data.
-
-The SDK's generic activation-failure rollback remains a platform limitation. This plugin now rejects the observed invalid inputs before persistence; it does not catch or mask arbitrary startup failures. The approved migration plan uses stopped Host processes and retained old artifacts, verified separately in isolation. Actual installation still requires approval and GUI acceptance.
-
-See the root [license](../../LICENSE) and bundled [third-party notices](THIRD-PARTY-NOTICES.md).
+See [maintenance](../../docs/MAINTENANCE.md), [license](../../LICENSE) and [third-party notices](THIRD-PARTY-NOTICES.md).

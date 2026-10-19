@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Context } from '@deepseek-ai/cordis';
 import { reviewViewPlugin } from '../tools/gui/domain.js';
 
-const namespace = 'remote.independentAutoReviewSettings';
+const namespace = 'remote.dshCustomAutoReviewSettings';
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
 function runtime(t) {

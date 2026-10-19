@@ -1,9 +1,7 @@
-# Local installed-gate probe
+# Offline tool-runtime probe
 
-This is a source-checkout-only developer helper, not part of the root runtime package and not a standalone package distribution. Its parent-relative preflight dependency and local report directory require the original complete checkout. Do not install an npm-packed copy.
+This directory contains a pure test-definition factory used by `test/verification.test.mjs`. It is not an installable bundle and has no activation hook, provider route, credentials access or network calls.
 
-The patch and regression test both use `index.js`; there is no alternate copied implementation.
+For configuration/reload validation, use `test/gui-lifecycle.test.mjs`. Those tests run isolated temporary profiles with synthetic model adapters, never the active user profile.
 
-Activation can make real requests to the configured review model and creates temporary test sessions. It must be separately authorized. It is not run by `npm test` or the single-bundle migration tests. Existing tests import only the pure probe definition.
-
-For offline save/reload validation, use the real Loader fixture in `test/gui-lifecycle.test.mjs` instead. It uses temporary profiles and synthetic model responses, not the active user profile.
+The former installation-specific preflight and live probe bundles were removed in 0.3.0. They modified an author's private provider metadata and did not belong in a general-purpose distribution. Model metadata is now read from each user's own DSH provider configuration.

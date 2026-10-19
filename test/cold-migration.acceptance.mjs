@@ -44,7 +44,7 @@ test('Stopped Host compositions migrate from retained two-package backup to one 
   assert.ok(oldRoot && oldSettings, 'Both original package backups are required');
   const packed = JSON.parse(execFileSync('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', directory], { cwd: project, encoding: 'utf8' }))[0];
   const candidate = await extract(join(directory, packed.filename), 'candidate');
-  const baseline = { reviewer: { provider: 'gptpro', model: 'codex-auto-review', reasoningEffort: 'medium', timeoutMs: 54321, unknownReviewerField: { retained: true } }, unknownRoot: { retained: true }, mainModel: 'do-not-touch' };
+  const baseline = { reviewer: { provider: 'fixture-provider', model: 'fixture-reviewer', reasoningEffort: 'fixture-effort', timeoutMs: 54321, unknownReviewerField: { retained: true } }, unknownRoot: { retained: true }, mainModel: 'do-not-touch' };
 
   function boot(label, packageDirectory, legacySettingsDirectory) {
     const script = `

@@ -1,85 +1,62 @@
-# Independent Auto Review
+<h1 align="center">DSH-Custom-Auto-Review</h1>
+<p align="center">Configure a separate DSH model route to review tool calls before execution.</p>
+<p align="center">
+  <a href="https://github.com/QR-0W/DSH-Custom-Auto-Review"><img alt="GitHub repository" src="https://img.shields.io/badge/GitHub-QR--0W%2FDSH--Custom--Auto--Review-181717?logo=github&style=flat-square"></a>
+  <a href="https://github.com/QR-0W/DSH-Custom-Auto-Review/releases"><img alt="Release assets" src="https://img.shields.io/badge/releases-fixed%20tag%20assets-2F81F7?style=flat-square"></a>
+  <img alt="Package version 0.3.0" src="https://img.shields.io/badge/package-0.3.0-347D39?style=flat-square">
+  <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-6F42C1?style=flat-square">
+</p>
+<p align="center"><a href="README.zh-CN.md">简体中文</a> · <a href="docs/MAINTENANCE.md">Maintenance policy</a></p>
 
-Use a separate model to review DSH tool calls. Keep the main model unchanged.
+DSH-Custom-Auto-Review adds a configurable review gate for DSH tool calls. The reviewer route is selected independently from the main model route. The review request still contains session and tool-call information, so a separate route does not create an isolated context or a privacy boundary.
 
-This project targets DSH `0.2.1-rc.1` and Node 24. It replaces the built-in experimental Auto Review component. It does not replace the main agent or the model adapter. Other DSH versions are not verified.
+Package: `@local/dsh-custom-auto-review@0.3.0`. Install a versioned `.tgz` from this repository's GitHub Releases. The package is not published as an npm registry package.
 
-## Repository and distribution
+## What it does
 
-Public source repository: [QR-0W/dsh-independent-auto-review](https://github.com/QR-0W/dsh-independent-auto-review).
+- Uses a user-selected, already configured DSH model provider and model for review.
+- Reviews supported native tool calls and started PTC inner calls before their tool bodies run.
+- Fails closed when review cannot complete; it does not fall back to the main model.
+- Keeps review-model settings separate from the main-model selection.
 
-**Version `0.2.1` adapts the bundle to DSH `0.2.1-rc.1`.** The review policy and the separate review route are unchanged; the review evidence now reads the working directory through the Host `workingDirectory` service, and the retained upstream source is re-vendored at `0.2.1-rc.1`. The gate and settings still ship as one installed package. The local profile was migrated, the restarted Host reads the original reviewer configuration, and the user confirmed that the new GUI displays and saves correctly. Minimal pre-write validation and isolated cold migration/restoration tests also pass. The SDK has not been modified and generic automatic rollback is not claimed. See [verification status](docs/gui-verification.md) and [scope](docs/migration-goal.md).
+Model-based review is probabilistic. It is not a security guarantee and must not replace DSH permission controls or human review for sensitive operations.
 
-The new package contains two sibling Host components: the review gate and the settings service. The settings service is exported as `@local/dsh-independent-auto-review/settings`; it is not a separate installed package. The root also ships the Client form and its prebuilt artifact. No install-time build script is needed.
+## Compatibility
 
-The old `@local/dsh-independent-auto-review-settings` companion must not coexist as an active provider with the integrated settings service. Its separate package and patch have been removed from this source, and the old companion is no longer installed in the verified local profile.
+| DSH version | Support status |
+| --- | --- |
+| `0.2.1-rc.1` | In the tested compatibility scope |
+| `0.2.1-rc.2` | In the tested compatibility scope; primary target for this maintenance round |
+| Other versions | Not verified; no compatibility claim |
 
-## Installation
+The package requires Node.js `>=24`. The automated suite passed 134 tests on each of `0.2.1-rc.1` and `0.2.1-rc.2`. These results do not establish GUI interaction or live-provider acceptance, which require user confirmation.
 
-The verified handoff uses an actual Host restart rather than dependence on generic SDK automatic rollback. Profile changes affect all sessions; obtain permission before stopping another installation's Host.
+## Install or roll back
 
-1. Use a tested, reviewed artifact or commit. Register a valid review model adapter; explicit reasoning effort must be supported.
-2. In a development checkout, run `npm run link:runtime` to link the exact shipped APIs. Do not install another runtime or hand-edit the profile.
-3. Confirm the current reviewer values. Quiesce saves and have the user select a manual permission mode before the handoff; do not change the main model.
-4. Disable the old settings companion through Plugin Manager before activating the integrated settings provider. Keep the built-in gate suppressed. Disabling the entire old root bundle can remove its suppression override; either prove an independently durable override or use an approved stopped-Host update whose first startup retains suppression.
-5. Install only the root package through Plugin Manager. Its two Host rows must remain siblings. Check application outcomes and absence of duplicate service, tool or Auto-gate registrations.
-6. Refresh the existing GUI and verify **Plugins → Installed → Independent Auto Review** displays and reads the form. Verify reload and changed-value saving with approved temporary values, then restore them.
-7. Remove the disabled old companion only after successful new-package validation. Confirm exactly one installed bundle card. Auto selection remains a separate user action.
+1. Open the [GitHub Releases](https://github.com/QR-0W/DSH-Custom-Auto-Review/releases) page and select the exact release tag.
+2. Download that release's `.tgz` asset and install the local archive through DSH Plugin Manager. Confirm the installed package version and follow the result shown by the manager.
+3. To roll back, choose a prior release tag and install its matching `.tgz` through the same manager. Do not install a floating or unpinned package.
 
-Do not hand-edit the profile's package manifest or patch. Package and profile changes use the plugin manager. Configuration writes use the public Host configuration service.
-
-The checked-in default is environment-specific:
-
-```yaml
-reviewer:
-  provider: gptpro
-  model: codex-auto-review
-  reasoningEffort: medium
-  timeoutMs: 60000
-```
-
-It is not a bundled model service. Public users must supply a valid registered route. The local `tools/preflight` helper fills missing metadata for this specific route only. It declares local limits of 128000 context tokens and 8192 output tokens, not measured gateway capacities. It preserves other models, provider settings, and credential references. It does not read or store API keys.
+Use one release artifact at a time. Follow the selected release's migration notes and verify the active review provider before enabling Auto.
 
 ## Configure the reviewer
 
-The GUI edits the independent reviewer, not the main model. Only an explicit save writes. The form retains its draft after a failure and uses a revision fence to prevent overwriting concurrent changes.
+1. Configure a model provider in DSH first. This plugin does not include a model service or supply model access.
+2. Open the plugin's settings form. The initial reviewer route is empty; choose a registered provider and model, then select a reasoning effort supported by that model when available.
+3. Save the reviewer settings explicitly. Saving does not change the main model and does not select or enable Auto.
+4. Select Auto separately only after checking the route, review behavior, and permission policy.
 
-The core reviewer is not a volatile settings consumer. Saving through the shared ConfigEditor operation uses its normal configuration lifecycle. It reloads the reviewer and can move Auto sessions to confined `workspace-write`. Select Auto again after the new configuration is active. Changing the main-model selection does not reload the reviewer. Saving does not test the gateway or select Auto.
+The plugin never silently inherits or falls back to the main model. Without a valid reviewer route, review is unavailable and tool execution remains blocked by the gate. There is no free-model or hosted-service promise.
 
-Provider and model identifiers are exact. The GUI does not prove gateway connectivity or backend model identity. An unsupported route or explicit reasoning level stops review; no main-model fallback exists.
+## Privacy and safety
 
-An empty GUI reasoning field inherits the bundle's default. If `reasoningEffort` is absent from all configuration layers, the review adapter uses its own default. Timeout must be an integer from 1 to 300000 milliseconds.
+For a review request, the plugin sends the selected reviewer the working directory, project instructions, filtered session history, and the pending tool-call details needed for the decision. These inputs can contain private project information. Review-route separation is a configuration choice, not context isolation or data redaction. Use a provider approved for the data in the session, and do not include secrets in test prompts or public examples.
 
-The deferred `auto_review_settings` management tool reads and saves through the same Host operation. Use `get` first, then supply that revision as `expectedRevision` with `set`. A stale revision rejects the write. The tool cannot select Auto or approve a pending tool call.
+A reviewer denial can still be subject to DSH's configured human-approval policy. A failed, timed-out, cancelled, or invalid review does not authorize the pending tool body. Keep DSH permission guards enabled and treat model output as fallible.
 
-## Safety
+## Development
 
-- Review native tool calls and PTC inner calls, not the outer `run_code` transport.
-- Retain the upstream policy and evidence roles.
-- Require a valid decision and a terminal `stop`.
-- Deny on review failure. Do not start the tool body.
-- Preserve later permission denials and tool guards.
-- Under `ask`, a review denial can request manual approval. Under `never`, the denial is final.
-- Cancellation cannot grant a pending call.
-- Removal cancels active reviews and selects confined `workspace-write` for Auto sessions. Preserve an existing `never` policy.
-
-The adapter must honor abort. Iterator cleanup waits at most one second. A defective adapter can retain network activity after that wait, but cannot grant the pending call.
-
-Model review is probabilistic. Do not use it as the only control for sensitive systems.
-
-**Warning:** The locally configured GPT Pro gateway uses HTTP. Review evidence can contain private project data. That connection has no TLS protection.
-
-## Remove or roll back
-
-The integrated package has no separately installed GUI companion. Disabling its settings Host row withdraws the settings service and tool; disabling the gate withdraws independent review. Whole-bundle disable removes both and can also remove the built-in suppression patch.
-
-For migration rollback, remain in manual mode and withdraw new providers before restoring old artifacts and the complete raw gate override through supported management/configuration APIs. Prove durable built-in suppression or use an approved stopped-Host handoff. Restore the old companion only after the new service/tool is gone. Verify the recovered configuration and single review integration before the user selects Auto. Do not infer safe recovery from a successful install response.
-
-Review-model metadata added during setup remains after removal. It does not affect the main model.
-
-## Development and verification
-
-End users do not need a compiler. For development, rebuild the GUI after editing its source:
+The following commands are the repository's current development scripts. `npm run link:runtime` links the exact DSH APIs used by the test harness; it does not install another runtime. See [maintenance policy](docs/MAINTENANCE.md) for the version-specific checks and release process.
 
 ```sh
 npm run link:runtime
@@ -88,10 +65,15 @@ npm run build:gui
 npm run check
 ```
 
-Tests use the installed runtime. Set `DSH_RUNTIME_DIR` when DSH is not in the global npm directory. Shared APIs are declared in peer and development dependencies. The linking helper supplies the exact shipped APIs; it does not install another runtime. The compiler dependencies stay in the separate build-tools directory.
+Do not use a live model gateway as a routine test target. Live-provider checks require explicit authorization and must use synthetic, non-sensitive input.
 
-The current suite passes 120 tests, including real rejection of invalid identifiers before disk writes or gate reload. The gate implementation is unchanged; its Config schema now matches the existing identifier rules. With `IAR_ROLLBACK_DIR` naming the retained old-artifact directory, `npm run check:migration` also passes the separate-process old-packages → new-package → restored-old-packages acceptance test. Normal saves, sibling lifetime, CAS, unknown fields, cancellation, headless use and packed dependencies are verified offline. The local profile migration and Host read are verified, and the user confirmed GUI display and saving. A separate explicit Reload-button check was not recorded. See [GUI verification](docs/gui-verification.md) for limits and [earlier gate verification](docs/verification.md) for history. No SDK automatic-recovery fix is claimed.
+## Attribution and license
 
-See the [source notice](NOTICE.md) and the GUI's [third-party notices](tools/gui/THIRD-PARTY-NOTICES.md). Private local reports, dependencies, environment files, and logs are excluded from Git. Ignore rules do not remove files already committed.
+This project includes source from DeepSeek's [`@deepseek-ai/dsh-experimental-auto-review`](https://github.com/deepseek-ai/deepseek-harness) version `0.2.1-rc.1`, licensed under MIT. This project adds a separately configurable reviewer route and settings UI. See [source notice](NOTICE.md), [license](LICENSE), and [maintenance policy](docs/MAINTENANCE.md).
 
-Project reports use short, direct English. They are not certified for full ASD-STE100 compliance. The upstream policy and license remain unchanged.
+## Links
+
+- [Source and issues](https://github.com/QR-0W/DSH-Custom-Auto-Review)
+- [Releases](https://github.com/QR-0W/DSH-Custom-Auto-Review/releases)
+- [中文说明](README.zh-CN.md)
+- [Maintenance policy](docs/MAINTENANCE.md)

@@ -1,16 +1,14 @@
-# Do not run two Auto integrations at the same time.
 - id: auto-review
   name: '@deepseek-ai/dsh-experimental-auto-review'
   disabled: true
 
 - insert:
-    - id: independent-auto-review
-      name: '@local/dsh-independent-auto-review'
+    - id: dsh-custom-auto-review
+      name: '@local/dsh-custom-auto-review'
       config:
         reviewer:
-          provider: gptpro
-          model: codex-auto-review
-          reasoningEffort: medium
+          provider: ''
+          model: ''
           timeoutMs: 60000
-    - id: independent-auto-review-settings-host
-      name: '@local/dsh-independent-auto-review/settings'
+    - id: dsh-custom-auto-review-settings-host
+      name: '@local/dsh-custom-auto-review/settings'

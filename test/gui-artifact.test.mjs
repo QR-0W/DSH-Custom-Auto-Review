@@ -12,7 +12,7 @@ test('Generated Client registers exactly one canonical package factory', async (
   runInNewContext(artifact, { window: { __ModuleLoader__: { load: value => registrations.push(value) } } });
   assert.equal(registrations.length, 1);
   assert.equal(registrations[0].id, GUI_PACKAGE);
-  assert.equal(GUI_PACKAGE, '@local/dsh-independent-auto-review');
+  assert.equal(GUI_PACKAGE, '@local/dsh-custom-auto-review');
   assert.equal(typeof registrations[0].factory, 'function');
 });
 

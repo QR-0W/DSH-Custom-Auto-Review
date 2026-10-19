@@ -42,7 +42,7 @@ Judge the pending action by what its tool and arguments will actually do. The ex
 
 For any allow, end with exactly the applicable two-member object and nothing else. In particular, when a medium action is allowed, the complete text must be exactly {"risk":"medium","decision":"allow"}. Do not add reason, explanation, labels, Markdown, or surrounding prose. Stop immediately after the closing brace.`;
 /** Cordis plugin name used by loader diagnostics. */
-const name = "independent-auto-review";
+const name = "dsh-custom-auto-review";
 /** Complete host services required before Auto may be advertised. */
 const inject = [
 	"approval",
@@ -442,10 +442,11 @@ function failed(exec, error) {
 /** Install the Auto preset and its prepended per-call review gate. */
 function apply(ctx, config) {
 	const reviewer = resolveReviewer(config?.reviewer);
+	if (!reviewer) return;
 	const permissionPresets = ctx.permissionPresets;
 	const removalPreset = permissionPresets.resolve("workspace-write");
 	if (removalPreset.sandbox !== "workspace-write" || removalPreset.approval !== "ask") {
-		throw new Error("independent-auto-review: workspace-write must use a confined sandbox and manual approval");
+		throw new Error("dsh-custom-auto-review: workspace-write must use a confined sandbox and manual approval");
 	}
 	let accepting = true;
 	const active = /* @__PURE__ */ new Set();
@@ -482,7 +483,7 @@ function apply(ctx, config) {
 		yield permissionPresets.registerAuto(() => {
 			if (!accepting) throw new Error("auto-review: integration is closing");
 			if (!ctx.llm.listProviders().some((provider) => provider.id === reviewer.provider)) {
-				throw new Error("independent-auto-review: the configured review provider is not available");
+				throw new Error("dsh-custom-auto-review: the configured review provider is not available");
 			}
 		});
 		yield async () => {

@@ -20,7 +20,10 @@ export function reviewErrorKey(error, fallback) {
 export function createReviewClient(api, publish) {
   let generation = 0;
   let active = false;
-  const wire = { save: async request => remoteValue(await api.save(request)) };
+  const wire = {
+    save: async request => remoteValue(await api.save(request)),
+    catalog: async query => remoteValue(await api.catalog(query)),
+  };
   async function run(operation, read) {
     if (!active) return undefined;
     const request = ++generation;
@@ -42,5 +45,6 @@ export function createReviewClient(api, publish) {
     dispose() { generation++; active = false; },
     refresh() { return run(async () => remoteValue(await api.read()), true); },
     save(draft, revision) { return run(() => submitReview(wire, draft, revision), false); },
+    catalog(query) { return wire.catalog(query); },
   };
 }

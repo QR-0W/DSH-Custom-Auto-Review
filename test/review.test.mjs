@@ -37,7 +37,8 @@ test('Keep the upstream review policy unchanged', () => {
 test('Validate the plugin configuration', () => {
   assert.equal(Config({ reviewer }).reviewer.timeoutMs, 1000);
   assert.equal(resolveReviewer({ provider: 'p', model: 'm' }).timeoutMs, 60000);
-  for (const invalid of [undefined, {}, { provider: 'p', model: '' }, { provider: ' p', model: 'm' }, { ...reviewer, timeoutMs: 0 }, { ...reviewer, timeoutMs: 1.5 }, { ...reviewer, reasoningEffort: '' }]) {
+  for (const empty of [undefined, null, {}, { provider: '', model: '' }]) assert.equal(resolveReviewer(empty), undefined);
+  for (const invalid of [{ provider: 'p', model: '' }, { provider: ' p', model: 'm' }, { ...reviewer, timeoutMs: 0 }, { ...reviewer, timeoutMs: 1.5 }, { ...reviewer, reasoningEffort: '' }]) {
     assert.throws(() => resolveReviewer(invalid));
   }
 });
@@ -45,8 +46,8 @@ test('Validate the plugin configuration', () => {
 test('Use only the separate review settings', () => {
   const signal = new AbortController().signal;
   const options = buildReviewOptions(resolveReviewer({ ...reviewer, reasoningEffort: 'high' }), signal, 'policy', 'evidence');
-  assert.equal(options.provider, 'gptpro');
-  assert.equal(options.model, 'codex-auto-review');
+  assert.equal(options.provider, 'fixture-provider');
+  assert.equal(options.model, 'fixture-reviewer');
   assert.equal(options.reasoningEffort, 'high');
   assert.equal(options.maxTokens, undefined);
   assert.equal(options.tools, undefined);
@@ -65,8 +66,8 @@ test('Changing the main provider and model does not change the review route', as
     await classifyRisk(host.ctx, f.agent, f.exec, f.exec.signal, reviewer);
   }
   assert.deepEqual(host.calls.map(({ provider, model, reasoningEffort }) => ({ provider, model, reasoningEffort })), [
-    { provider: 'gptpro', model: 'codex-auto-review', reasoningEffort: undefined },
-    { provider: 'gptpro', model: 'codex-auto-review', reasoningEffort: undefined },
+    { provider: 'fixture-provider', model: 'fixture-reviewer', reasoningEffort: undefined },
+    { provider: 'fixture-provider', model: 'fixture-reviewer', reasoningEffort: undefined },
   ]);
 });
 

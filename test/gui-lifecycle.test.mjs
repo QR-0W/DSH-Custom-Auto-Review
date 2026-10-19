@@ -26,7 +26,7 @@ test('Actual tool save and Gateway share the surviving settings store across Loa
   assert.equal(result.isError, false, JSON.stringify(result));
   const saved = JSON.parse(result.content.find(block => block.type === 'text').text);
   assert.equal(saved.saved, true);
-  assert.equal(saved.reviewer.reasoningEffort, 'medium');
+  assert.equal(saved.reviewer.reasoningEffort, undefined);
   assert.equal(saved.reviewer.timeoutMs, 58000);
   assert.deepEqual((await r.read()).reviewer, saved.reviewer);
   assert.deepEqual(r.gate().options.config.unknownRoot, r.raw.unknownRoot);

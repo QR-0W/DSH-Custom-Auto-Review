@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { reviewMutation, normalizeReviewer, reviewDraft, submitReview, reviewConfigEntries } from '../tools/gui/domain.js';
 
-const draft = { provider: 'gptpro', model: 'codex-auto-review', reasoningEffort: 'medium', timeoutMs: '60000' };
+const draft = { provider: 'fixture-provider', model: 'fixture-reviewer', reasoningEffort: 'fixture-effort', timeoutMs: '60000' };
 const reviewer = { ...draft, timeoutMs: 60000 };
 
 test('GUI registers one bundle-card form and its review-row alternate, never the old companion', () => {
   assert.deepEqual(reviewConfigEntries(), [
-    { name: 'plugins.bundle.config', key: '@local/dsh-independent-auto-review' },
-    { name: 'plugins.row.config', key: '@local/dsh-independent-auto-review#independent-auto-review' },
+    { name: 'plugins.bundle.config', key: '@local/dsh-custom-auto-review' },
+    { name: 'plugins.row.config', key: '@local/dsh-custom-auto-review#dsh-custom-auto-review' },
   ]);
 });
 

@@ -1,10 +1,12 @@
 # 独立审查单包迁移记录
 
+> 此文记录 0.2.0 的历史迁移，不代表 DSH Custom Auto Review 0.3.0 已完成安装或 GUI 人工验收。当前行为与限制见根目录 README 和维护政策。
+
 ## 结果
 
 本机已安装 `@local/dsh-independent-auto-review` 0.2.0，旧 settings companion 已移除。重启后的 Host 能读取原审查配置；用户确认新版表单「显示和保存都正常」。
 
-审查与设置服务仍是两个平级 Host 组件。主包名称、`include:independent-auto-review` 和配置身份不变。最终读取为 `gptpro / codex-auto-review / high / 60000`。
+审查与设置服务仍是两个平级 Host 组件。主包名称、`include:independent-auto-review` 和配置身份不变。最终读取保留了该安装的私有供应商和模型标识、`high` 思考强度以及 60000 毫秒超时；具体路由不随公开仓库分发。
 
 ## 最小改动范围
 

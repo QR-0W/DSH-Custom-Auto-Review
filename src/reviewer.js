@@ -5,34 +5,47 @@ import { deepFreeze } from '@deepseek-ai/dsh-util-values';
 const identifierPattern = /^\S(?:[\s\S]*\S)?$/;
 
 /** Configure the review route. Do not inherit the main model route. */
+const timeout = z.number().min(1).max(300000).step(1).default(60000);
 export const Config = z.object({
-  reviewer: z.object({
-    provider: z.string().pattern(identifierPattern).required(),
-    model: z.string().pattern(identifierPattern).required(),
-    reasoningEffort: z.string().pattern(identifierPattern),
-    timeoutMs: z.number().min(1).max(300000).step(1).default(60000),
-  }).required(),
+  reviewer: z.union([
+    z.object({
+      provider: z.string().pattern(identifierPattern).required(),
+      model: z.string().pattern(identifierPattern).required(),
+      reasoningEffort: z.union([z.string().pattern(identifierPattern), z.const(null)]),
+      timeoutMs: timeout,
+    }),
+    z.object({
+      provider: z.const('').default(''),
+      model: z.const('').default(''),
+      reasoningEffort: z.const(null),
+      timeoutMs: timeout,
+    }),
+  ]).default({ provider: '', model: '', timeoutMs: 60000 }),
 });
 
 /** Make a detached configuration. Invalid values stop plugin activation. */
 export function resolveReviewer(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error('independent-auto-review: reviewer configuration is required');
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('dsh-custom-auto-review: reviewer configuration must be an object');
   }
-  const { provider, model, reasoningEffort } = value;
+  const { provider = '', model = '' } = value;
+  const reasoningEffort = value.reasoningEffort ?? undefined;
   const timeoutMs = value.timeoutMs ?? 60000;
-  for (const [name, item] of [['provider', provider], ['model', model]]) {
+  const unconfigured = provider === '' && model === '';
+  for (const [name, item] of unconfigured ? [] : [['provider', provider], ['model', model]]) {
     if (typeof item !== 'string' || item.trim().length === 0 || item !== item.trim()) {
-      throw new Error(`independent-auto-review: reviewer.${name} must be a nonempty route identifier`);
+      throw new Error(`dsh-custom-auto-review: reviewer.${name} must be a nonempty route identifier`);
     }
   }
   if (reasoningEffort !== undefined &&
       (typeof reasoningEffort !== 'string' || !reasoningEffort.trim() || reasoningEffort !== reasoningEffort.trim())) {
-    throw new Error('independent-auto-review: reviewer.reasoningEffort must be a nonempty identifier');
+    throw new Error('dsh-custom-auto-review: reviewer.reasoningEffort must be a nonempty identifier');
   }
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300000) {
-    throw new Error('independent-auto-review: reviewer.timeoutMs must be an integer from 1 to 300000');
+    throw new Error('dsh-custom-auto-review: reviewer.timeoutMs must be an integer from 1 to 300000');
   }
+  if (unconfigured) return undefined;
   return Object.freeze({ provider, model, timeoutMs,
     ...(reasoningEffort === undefined ? {} : { reasoningEffort }) });
 }
@@ -75,7 +88,7 @@ export async function requestDecision(llm, reviewer, parentSignal, system, userT
       controller.signal.addEventListener('abort', onAbort, { once: true });
     });
     timer = setTimeout(() => controller.abort(new Error(
-      `independent-auto-review: review timed out after ${reviewer.timeoutMs} ms`
+      `dsh-custom-auto-review: review timed out after ${reviewer.timeoutMs} ms`
     )), reviewer.timeoutMs);
     const options = buildReviewOptions(reviewer, controller.signal, system, userText);
     const decision = Promise.resolve().then(() => {
