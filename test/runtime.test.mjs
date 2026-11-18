@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Context } from '@deepseek-ai/cordis';
-import { ToolRuntime } from '@deepseek-ai/dsh-tools';
+import { toolRuntime } from './tool-runtime.mjs';
 import { LlmRuntime, LlmAdapter } from '@deepseek-ai/dsh-llm';
 import { apply } from '../src/auto-review.js';
 import { reviewer, fixture, decisionStream, mockContext } from './fixtures.mjs';
@@ -21,7 +21,7 @@ async function runtime(stream) {
     stream(options) { fake.calls.push(options); return stream(options); }
   }
   llm.registerAdapter(['fixture-provider'], new Adapter());
-  const tools = new ToolRuntime(ctx);
+  const tools = toolRuntime(ctx);
   apply(ctx, { reviewer });
   const f = fixture();
   let bodyCalls = 0;
@@ -36,7 +36,7 @@ async function runtime(stream) {
 test('The real tool registry runs the body after a valid review allow', async () => {
   const r = await runtime(() => decisionStream());
   try {
-    const result = await r.tools.execute(r.f.exec);
+    const result = await r.tools.executeOne(r.f.exec);
     assert.equal(result.isError, false, JSON.stringify(result));
     assert.equal(r.bodyCalls(), 1);
     assert.equal(r.fake.calls[0].provider, 'fixture-provider');
@@ -50,7 +50,7 @@ for (const [name, stream] of [
 ]) test(`The real tool registry does not run the body after ${name}`, async () => {
   const r = await runtime(stream);
   try {
-    const result = await r.tools.execute(r.f.exec);
+    const result = await r.tools.executeOne(r.f.exec);
     assert.equal(result.isError, true);
     assert.equal(r.bodyCalls(), 0);
   } finally { await r.ctx.fiber.dispose(); }
@@ -60,7 +60,7 @@ test('A monotonic tool guard still denies a reviewer allow', async () => {
   const r = await runtime(() => decisionStream());
   try {
     r.tools.guard(() => 'This test guard denies the call.');
-    const result = await r.tools.execute(r.f.exec);
+    const result = await r.tools.executeOne(r.f.exec);
     assert.equal(result.isError, true); assert.equal(r.bodyCalls(), 0);
   } finally { await r.ctx.fiber.dispose(); }
 });

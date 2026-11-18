@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Context } from '@deepseek-ai/cordis';
 import { TypertRegistry } from '@deepseek-ai/dsh-typert-registry';
 import { TypertGatewayService } from '@deepseek-ai/dsh-api-gateway';
-import { ToolRuntime } from '@deepseek-ai/dsh-tools';
+import { toolRuntime } from './tool-runtime.mjs';
 import * as settingsPlugin from '../tools/gui/host.js';
 import { GUI_PACKAGE, SETTINGS_SERVICE, createDescriptors, clientContribution } from '../tools/gui/rpc.js';
 import { REVIEW_ENTRY } from '../tools/gui/service.js';
@@ -22,7 +22,7 @@ async function runtime() {
   root.provide('credentials', { async resolve() { credentialReads++; throw new Error('synthetic credential access denied'); } });
   const registry = new TypertRegistry(root);
   const gateway = new TypertGatewayService(root, TypertGatewayService.Config({}));
-  const tools = new ToolRuntime(root);
+  const tools = toolRuntime(root);
   const initial = { reviewer: initialReviewer, unrelated: { keep: true }, mainModel: 'unchanged-main' };
   const row = { entry: { id: REVIEW_ENTRY, options: { config: structuredClone(initial) }, fiber: { config: structuredClone(initial) } }, inherited: structuredClone(initial) };
   let writes = 0;
@@ -144,7 +144,7 @@ test('Real Gateway serializes two saves from one revision', t => using(t, async 
 test('Real ToolRuntime and Gateway read and save the same settings operation', t => using(t, async r => {
   const f = executionFixture();
   async function call(argumentsObject) {
-    const output = await r.tools.execute({ ...f.exec, name: 'auto_review_settings', arguments: argumentsObject });
+    const output = await r.tools.executeOne({ ...f.exec, name: 'auto_review_settings', arguments: argumentsObject });
     assert.equal(output.isError, false, JSON.stringify(output));
     return JSON.parse(output.content.find(block => block.type === 'text').text);
   }
@@ -165,7 +165,7 @@ test('Disposing the settings fiber withdraws strict definitions, service and too
   await assert.rejects(r.read(), gatewayCode('gateway/definition-unavailable'));
   await assert.rejects(r.save({ expectedRevision: 0, reviewer: initialReviewer }), gatewayCode('gateway/definition-unavailable'));
   const f = executionFixture();
-  const result = await r.tools.execute({ ...f.exec, name: 'auto_review_settings', arguments: { action: 'get' } });
+  const result = await r.tools.executeOne({ ...f.exec, name: 'auto_review_settings', arguments: { action: 'get' } });
   assert.equal(result.isError, true);
   assert.equal(r.writes(), 0);
 }));

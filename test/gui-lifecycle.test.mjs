@@ -20,7 +20,7 @@ test('Actual tool save and Gateway share the surviving settings store across Loa
   const r = await lifecycleRuntime(t);
   const f = r.session();
   const old = await r.read();
-  const result = await r.tools.execute({ ...f.exec, name: 'auto_review_settings', arguments: {
+  const result = await r.tools.executeOne({ ...f.exec, name: 'auto_review_settings', arguments: {
     action: 'set', expectedRevision: old.revision, reviewer: { ...reviewer, reasoningEffort: '', timeoutMs: 58000 },
   } });
   assert.equal(result.isError, false, JSON.stringify(result));
@@ -49,7 +49,7 @@ test('Actual Loader reload cancels and drains a pending review while preserving 
   setApprovalPolicy(f.session, 'never');
   let body = 0;
   r.tools.register({ ...f.schema, output: { schema: { type: 'boolean' }, render: () => [] }, execute() { body++; return true; } });
-  const pending = r.tools.execute(f.exec);
+  const pending = r.tools.executeOne(f.exec);
   const outcome = pending.then(value => ({ value }), error => ({ error }));
   await started.promise;
   const old = await r.read();

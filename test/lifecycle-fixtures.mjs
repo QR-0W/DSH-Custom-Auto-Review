@@ -9,7 +9,7 @@ import { mountRootInclude, readProfilePatches } from '@deepseek-ai/dsh-app-boot'
 import { ConfigEditor } from '@deepseek-ai/dsh-config-editor';
 import { TypertRegistry } from '@deepseek-ai/dsh-typert-registry';
 import { TypertGatewayService } from '@deepseek-ai/dsh-api-gateway';
-import { ToolRuntime } from '@deepseek-ai/dsh-tools';
+import { toolRuntime } from './tool-runtime.mjs';
 import { ApprovalService } from '@deepseek-ai/dsh-user-approval';
 import { PermissionPresetService } from '@deepseek-ai/dsh-permission-presets';
 import { SessionProjectionRegistry } from '@deepseek-ai/dsh-session-projection';
@@ -76,6 +76,7 @@ export async function lifecycleRuntime(t, { headless = false, stream = () => dec
   new Loader(root, { baseUrl: pathToFileURL(join(dir, 'package.json')).href });
   root.provide('profileContext', profile);
   const sessions = [];
+  root.provide('agents', { list: () => [] });
   root.provide('sessions', { list: () => sessions });
   root.provide('workingDirectory', { ensure: async () => dir });
   root.provide('shell', { sandboxMode: 'workspace-write' });
@@ -86,7 +87,7 @@ export async function lifecycleRuntime(t, { headless = false, stream = () => dec
   new SessionProjectionRegistry(root);
   await root.plugin(ApprovalService, { policy: 'ask' });
   await root.plugin(PermissionPresetService, {});
-  const tools = new ToolRuntime(root);
+  const tools = toolRuntime(root);
   let gateway, registry;
   if (!headless) {
     new ConfigEditor(root);
