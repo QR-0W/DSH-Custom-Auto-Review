@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dsh: [0.2.1-rc.1, 0.2.1-rc.2]
+        dsh: [0.2.2-rc.1, 0.2.2-rc.4]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,7 +34,7 @@ jobs:
         with:
           node-version: '24'
       - run: node -e "require('node:assert/strict').equal(process.env.GITHUB_REF_NAME, 'v' + require('./package.json').version)"
-      - run: npm install -g @deepseek-ai/dsh@0.2.1-rc.2 --ignore-scripts
+      - run: npm install -g @deepseek-ai/dsh@0.2.2-rc.4 --ignore-scripts
       - run: npm run link:runtime
       - run: npm ci --ignore-scripts --prefix tools/gui/build-tools
       - run: npm run check:build

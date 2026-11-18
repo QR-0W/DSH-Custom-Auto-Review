@@ -24,13 +24,13 @@ test('Packed root owns both Host entries and Client without a nested companion o
   const metadata = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
   assert.equal(metadata.name, '@local/dsh-custom-auto-review');
   assert.equal(GUI_PACKAGE, metadata.name);
-  assert.equal(metadata.version, '0.3.0');
-  const supportedPeerRange = '0.2.1-rc.1 || 0.2.1-rc.2';
+  assert.equal(metadata.version, '0.3.1');
+  const supportedPeerRange = '0.2.2-rc.1 || 0.2.2-rc.4';
   for (const [name, version] of Object.entries(metadata.peerDependencies).filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))) {
     assert.equal(version, supportedPeerRange, `${name} peer support must be the exact tested release set`);
   }
   for (const [name, version] of Object.entries(metadata.devDependencies).filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))) {
-    assert.equal(version, '0.2.1-rc.2', `${name} must use the unified rc.2 test runtime`);
+    assert.equal(version, '0.2.2-rc.4', `${name} must use the unified rc.4 test runtime`);
   }
   for (const file of ['locale/en.json', 'locale/zh.json', 'tools/gui/locale/en.json', 'tools/gui/locale/zh.json']) assert.ok(paths.has(file), `Missing localized metadata ${file}`);
   const icons = [...paths].filter(file => file.endsWith('.svg'));
